@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0d0f">
+<title>Improv Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0d0d0f;--s1:#141416;--s2:#1b1b1e;--s3:#222226;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#edeae3;--muted:#8a857d;--muted2:#5a564f;
+  --accent:#f0c93a;--accent-bg:rgba(240,201,58,.1);--accent-border:rgba(240,201,58,.25);
+  --red:#e8675a;--blue:#6fb4e8;
+  --font:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;
+  --r:11px;--r-sm:8px;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px);--safe-r:env(safe-area-inset-right,0px);
+  --header:54px;
+}
+html{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font);display:flex;flex-direction:column;height:100%;overflow:hidden}
+button{font-family:var(--font);cursor:pointer}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* HEADER */
+.header{
+  height:var(--header);padding-top:var(--safe-t);
+  padding-left:calc(14px + var(--safe-l));padding-right:calc(14px + var(--safe-r));
+  border-bottom:1px solid var(--border);background:var(--bg);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  flex-shrink:0;z-index:20;
+}
+.header-left{display:flex;align-items:center;gap:9px;min-width:0}
+.logo{width:26px;height:26px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:500;color:#000;flex-shrink:0}
+.app-name{font-size:14px;font-weight:700;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.header-stats{display:flex;gap:12px}
+.hs{text-align:right}
+.hs-n{font-family:var(--mono);font-size:14px;color:var(--accent);line-height:1}
+.hs-l{font-size:9px;color:var(--muted2);letter-spacing:.07em;text-transform:uppercase;margin-top:1px}
+
+/* PRESET BUTTONS */
+.preset-bar{display:flex;gap:4px;flex-shrink:0}
+.btn-preset{padding:4px 8px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:10px;font-family:var(--mono);display:flex;align-items:center;gap:3px;white-space:nowrap}
+.btn-preset:hover,.btn-preset:active{border-color:var(--accent);color:var(--accent)}
+.btn-preset.saved{border-color:rgba(240,201,58,.4);color:var(--accent)}
+
+/* LAYOUT */
+.app-body{flex:1;display:flex;overflow:hidden}
+.main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  padding:12px 12px calc(20px + var(--safe-b));}
+@media(min-width:768px){.main{padding:16px 18px 20px}}
+
+/* SIDEBAR — landscape tablet/desktop */
+.sidebar{display:none;width:360px;flex-shrink:0;border-left:1px solid var(--border);overflow-y:auto;background:var(--s1);-webkit-overflow-scrolling:touch}
+@media(min-width:768px) and (orientation:landscape){.sidebar{display:block}}
+@media(min-width:1024px){.sidebar{display:block;width:400px}}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.filter-lbl{font-family:var(--mono);font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.1em;align-self:center;margin-right:2px}
+.fpill{padding:4px 9px;border-radius:999px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:10px;font-family:var(--mono);white-space:nowrap;transition:all .15s}
+.fpill.active{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.filter-clear{padding:4px 9px;border-radius:999px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:10px;font-family:var(--mono)}
+.filter-clear:hover{color:var(--red);border-color:var(--red)}
+
+/* SECTION LABEL */
+.sec-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--muted2);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+.sec-count{font-family:var(--mono);font-size:9px;color:var(--muted2)}
+
+/* ENERGY CHART */
+.echart{display:flex;align-items:flex-end;gap:3px;height:28px;margin-bottom:8px}
+.ecol{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0}
+.efill{width:100%;border-radius:2px 2px 0 0}
+.elbl{font-family:var(--mono);font-size:7px;color:var(--muted2)}
+
+/* ADD ROW */
+.add-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.btn-add{padding:6px 10px;border-radius:var(--r-sm);border:1px dashed var(--border2);background:transparent;color:var(--muted);font-size:11px;font-family:var(--font);display:flex;align-items:center;gap:4px;transition:color .15s,border-color .15s}
+.btn-add:hover,.btn-add:active{color:var(--accent);border-color:var(--accent)}
+.sort-bar{display:flex;gap:5px;align-items:center;margin-bottom:8px}
+.sort-lbl{font-family:var(--mono);font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.1em}
+.btn-sort{padding:3px 9px;border-radius:999px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:10px;font-family:var(--mono);transition:all .15s}
+.btn-sort.active{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.msort-bar{display:flex;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.btn-msort{padding:3px 9px;border-radius:999px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:10px;font-family:var(--mono)}
+.btn-msort.active{border-color:var(--accent);color:var(--accent)}
+
+/* PLAYLIST */
+#playlist{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.empty-state{text-align:center;padding:32px 20px;color:var(--muted2);font-size:12px;border:1px dashed var(--border2);border-radius:var(--r)}
+
+/* SLOT */
+.slot-wrap{display:flex;flex-direction:column}
+.slot{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:9px 10px;cursor:pointer;user-select:none;touch-action:pan-y;transition:border-color .15s,background .15s,border-radius .15s}
+.slot.selected{border-color:var(--accent);background:var(--accent-bg)}
+.slot.selected.expanded{border-radius:var(--r) var(--r) 0 0;border-bottom-color:transparent}
+.slot.drag-over{border-color:var(--accent);background:rgba(240,201,58,.04)}
+.slot.dragging{opacity:.25}
+.slot.filtered-out{display:none}
+
+/* ACCORDION DETAIL — mobile portrait only */
+.slot-detail{
+  display:none;
+  background:var(--s1);
+  border:1px solid var(--accent);
+  border-top:none;
+  border-radius:0 0 var(--r) var(--r);
+  overflow:hidden;
+  max-height:0;
+  transition:max-height .3s ease;
+}
+.slot-detail.open{display:block;max-height:1000px}
+.slot-detail-inner{padding:14px}
+@media(min-width:768px) and (orientation:landscape){.slot-detail{display:none!important}}
+@media(min-width:1024px){.slot-detail{display:none!important}}
+
+.drag-handle{color:var(--muted2);font-size:13px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.drag-handle:active{cursor:grabbing;color:var(--accent)}
+.slot-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.slot-meta{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.slot-why{font-size:10px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.e-bar{display:flex;gap:2px;margin-top:3px}
+.e-pip{width:4px;height:9px;border-radius:2px}
+.cat-pill{font-size:9px;padding:2px 6px;border-radius:999px;font-family:var(--mono);white-space:nowrap}
+.time-accum{font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:2px}
+
+/* SLOT RIGHT SIDE */
+.slot-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.slot-time{display:flex;align-items:center;gap:3px}
+.time-input{width:34px;background:var(--s2);border:1px solid var(--border2);border-radius:5px;color:var(--accent);font-family:var(--mono);font-size:12px;font-weight:500;text-align:center;padding:3px 4px;outline:none;-moz-appearance:textfield}
+.time-input::-webkit-inner-spin-button,.time-input::-webkit-outer-spin-button{-webkit-appearance:none}
+.time-input:focus{border-color:var(--accent)}
+.time-label{font-family:var(--mono);font-size:10px;color:var(--muted2)}
+.slot-actions{display:flex;gap:3px}
+.btn-icon{width:26px;height:26px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s;flex-shrink:0}
+.btn-icon:hover,.btn-icon:active{background:var(--s2);color:var(--text)}
+.btn-icon.del:hover,.btn-icon.del:active{color:var(--red);border-color:var(--red)}
+.btn-icon.sw:hover,.btn-icon.sw:active{color:var(--blue);border-color:var(--blue)}
+.btn-icon.brk:hover,.btn-icon.brk:active{color:var(--accent);border-color:var(--accent)}
+
+/* BREAK + CUSTOM */
+.break-slot{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px dashed var(--border2);border-radius:var(--r-sm);user-select:none;cursor:grab;touch-action:pan-y}
+.break-slot.drag-over{border-color:var(--accent)}
+.break-slot.dragging{opacity:.25}
+.break-slot span{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.btn-remove{margin-left:auto;font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:var(--font)}
+.custom-slot{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:8px;background:var(--s1);border:1px dashed var(--accent-border);border-radius:var(--r);padding:9px 10px;cursor:grab;user-select:none;touch-action:pan-y}
+.custom-slot.drag-over{border-color:var(--accent)}
+.custom-slot.dragging{opacity:.25}
+.custom-input{background:transparent;border:none;outline:none;color:var(--text);font-size:13px;font-weight:600;font-family:var(--font);width:100%}
+.custom-input::placeholder{color:var(--muted2)}
+
+/* DETAIL PANEL — sidebar & accordion share */
+.d-panel{padding:16px}
+.d-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:180px;color:var(--muted2);font-size:12px;text-align:center;gap:6px}
+.d-empty-icon{font-size:28px;opacity:.15}
+.dname{font-size:17px;font-weight:800;line-height:1.2;margin-bottom:4px}
+.jugadores-badge{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.dsec{margin-bottom:14px}
+.dsec-lbl{font-family:var(--mono);font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.1em;padding-bottom:5px;border-bottom:1px solid var(--border);margin-bottom:7px}
+.dtext{font-size:13px;line-height:1.65}
+.steps{display:flex;flex-direction:column;gap:5px}
+.step{display:flex;gap:8px}
+.step-n{font-family:var(--mono);font-size:10px;color:var(--accent);min-width:16px;flex-shrink:0;margin-top:2px}
+.step-t{font-size:12px;line-height:1.5}
+.prompt-card{background:var(--s2);border:1px solid var(--border2);border-radius:9px;padding:10px 11px;margin-bottom:7px}
+.prompt-label{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.prompt-text{font-size:12px;line-height:1.55;color:var(--text);font-style:italic}
+.prompt-why{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.4}
+.prompt-note{font-size:11px;color:var(--muted);background:rgba(240,201,58,.06);border:1px solid rgba(240,201,58,.15);border-radius:6px;padding:7px 9px;margin-bottom:6px}
+.no-prompt{font-size:12px;color:var(--muted);font-style:italic}
+.tips{display:flex;flex-direction:column;gap:4px}
+.tip{font-size:12px;color:var(--muted);padding-left:8px;border-left:2px solid var(--border2);line-height:1.5}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:60;align-items:flex-end;justify-content:center}
+@media(min-width:600px){.overlay{align-items:center;padding:20px}}
+.overlay.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:18px 18px 0 0;width:100%;max-width:560px;height:85vh;display:flex;flex-direction:column;overflow:hidden;padding-bottom:var(--safe-b)}
+@media(min-width:600px){.modal{border-radius:var(--r);height:auto;max-height:85vh}}
+.modal-drag{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:10px auto 0;flex-shrink:0}
+@media(min-width:600px){.modal-drag{display:none}}
+.modal-head{padding:12px 14px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.modal-head h3{font-size:13px;font-weight:600}
+.banner{margin:8px 10px 0;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:9px;padding:8px 10px;flex-shrink:0}
+.banner-lbl{font-family:var(--mono);font-size:8px;color:var(--accent);margin-bottom:3px;letter-spacing:.07em}
+.banner-why{font-size:11px;color:var(--muted);margin-bottom:5px;line-height:1.4}
+.banner-quick{display:flex;gap:4px;flex-wrap:wrap}
+.banner-btn{font-size:9px;padding:3px 8px;border-radius:999px;border:1px solid var(--accent-border);color:var(--accent);cursor:pointer;font-family:var(--mono);background:transparent}
+.modal-search{padding:8px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.modal-search input{width:100%;background:var(--s2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:8px 10px;color:var(--text);font-size:14px;font-family:var(--font);outline:none}
+.modal-search input:focus{border-color:var(--accent)}
+.mfilters{padding:6px 10px;display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--border);flex-shrink:0}
+.mfilters::-webkit-scrollbar{display:none}
+.mfpill{padding:3px 9px;border-radius:999px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:10px;font-family:var(--mono);white-space:nowrap;flex-shrink:0}
+.mfpill.active{border-color:var(--accent);color:var(--accent)}
+.mlist{overflow-y:auto;flex:1;padding:6px 8px 10px;-webkit-overflow-scrolling:touch}
+.mgame{padding:8px 10px;border-radius:var(--r-sm);border:1px solid transparent;cursor:pointer;margin-bottom:3px}
+.mgame:active{background:var(--s2);border-color:var(--border2)}
+@media(hover:hover){.mgame:hover{background:var(--s2);border-color:var(--border2)}}
+.mgame.sug{border-color:rgba(240,201,58,.2);background:rgba(240,201,58,.04)}
+.mgame.same-type{border-color:rgba(111,180,232,.2);background:rgba(111,180,232,.04)}
+.mgame.used{opacity:.25;pointer-events:none}
+.mgame-name{font-size:13px;font-weight:600;margin-bottom:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.mgame-desc{font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:3px}
+.mgame-meta{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.tag{font-family:var(--mono);font-size:9px;padding:1px 5px;border-radius:999px}
+.tag-sug{color:var(--accent);border:1px solid var(--accent-border)}
+.tag-same{color:var(--blue);border:1px solid rgba(111,180,232,.3)}
+
+/* PRESET MODAL */
+.preset-modal{background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);width:90%;max-width:340px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.preset-modal h3{font-size:14px;font-weight:700;margin-bottom:4px}
+.preset-slot{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--s2);border-radius:var(--r-sm);border:1px solid var(--border2)}
+.preset-slot-name{flex:1;font-size:12px;color:var(--muted)}
+.preset-slot-info{font-family:var(--mono);font-size:10px;color:var(--accent)}
+.preset-slot-empty{font-family:var(--mono);font-size:10px;color:var(--muted2)}
+.btn-preset-action{padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:10px;font-family:var(--mono)}
+.btn-preset-action.save{border-color:var(--accent-border);color:var(--accent)}
+.btn-preset-action.load{border-color:rgba(111,180,232,.3);color:var(--blue)}
+.btn-preset-action.del{border-color:rgba(232,103,90,.3);color:var(--red)}
+.btn-preset-close{align-self:flex-end;padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:11px;font-family:var(--font)}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-left">
+    <div class="logo">IP</div>
+    <div class="app-name">Improv Planner</div>
+  </div>
+  <div class="header-right">
+    <div class="header-stats">
+      <div class="hs"><div class="hs-n" id="sj">0</div><div class="hs-l">juegos</div></div>
+      <div class="hs"><div class="hs-n" id="sm">—</div><div class="hs-l">min total</div></div>
+    </div>
+    <button class="btn-preset" onclick="openPresets()" title="Presets">💾 Presets</button>
+  </div>
+</header>
+
+<div class="app-body">
+  <main class="main">
+    <!-- FILTER BAR -->
+    <div class="filter-bar" id="filter-bar">
+      <span class="filter-lbl">Filtrar:</span>
+      <!-- filled by JS -->
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+      <div class="sec-lbl" style="flex:1;margin-bottom:0;min-width:120px">Playlist <span class="sec-count" id="visible-count"></span></div>
+      <div class="sort-bar">
+        <span class="sort-lbl">Orden:</span>
+        <button class="btn-sort" id="sort-none" onclick="setPlaylistSort('none')">Original</button>
+        <button class="btn-sort" id="sort-alpha" onclick="setPlaylistSort('alpha')">A–Z</button>
+        <button class="btn-sort" id="sort-cat" onclick="setPlaylistSort('cat')">Tipo</button>
+      </div>
+    </div>
+    <div id="playlist"></div>
+    <div class="echart" id="echart"></div>
+    <div class="add-row">
+      <button class="btn-add" onclick="openPicker('add',null)">＋ Agregar juego</button>
+      <button class="btn-add" onclick="addBreak(null)">⏸ Intermedio</button>
+      <button class="btn-add" onclick="addCustom(null)">✎ Segmento libre</button>
+    </div>
+  </main>
+
+  <!-- SIDEBAR landscape/desktop -->
+  <aside class="sidebar" id="sidebar">
+    <div class="d-panel" id="sidebar-content">
+      <div class="d-empty" id="sidebar-empty"><div class="d-empty-icon">◎</div><div>Toca un juego para ver<br>descripción y guía</div></div>
+      <div id="sidebar-detail" style="display:none"></div>
+    </div>
+  </aside>
+</div>
+
+<!-- PICKER MODAL -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-head"><h3 id="modal-title">Agregar juego</h3><button class="btn-icon" onclick="closeModal()" style="width:28px;height:28px">✕</button></div>
+    <div id="banner-wrap"></div>
+    <div class="modal-search"><input type="text" id="srch" placeholder="Buscar juego..." oninput="renderList()" autocomplete="off" spellcheck="false"></div>
+    <div class="mfilters" id="mfilters"></div>
+    <div class="msort-bar">
+      <span class="sort-lbl" style="font-family:var(--mono);font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.1em;margin-right:2px">Orden:</span>
+      <button class="btn-msort active" id="msort-alpha" onclick="setModalSort('alpha')">A–Z</button>
+      <button class="btn-msort" id="msort-cat" onclick="setModalSort('cat')">Tipo</button>
+    </div>
+    <div class="mlist" id="mlist"></div>
+  </div>
+</div>
+
+<!-- PRESETS MODAL -->
+<div class="overlay" id="preset-modal">
+  <div class="preset-modal">
+    <h3>💾 Presets de Playlist</h3>
+    <div id="preset-slots"></div>
+    <button class="btn-preset-close" onclick="closePresets()">Cerrar</button>
+  </div>
+</div>
+
+<script>
+// ── COLORS ────────────────────────────────────────────────────
+const CC={
+  'Formato':{bg:'rgba(184,154,232,.15)',c:'#b89ae8',b:'rgba(184,154,232,.3)'},
+  'Narrativo':{bg:'rgba(111,207,138,.15)',c:'#6fcf8a',b:'rgba(111,207,138,.3)'},
+  'Moderado':{bg:'rgba(122,184,232,.15)',c:'#7ab8e8',b:'rgba(122,184,232,.3)'},
+  'Publico':{bg:'rgba(232,201,122,.15)',c:'#e8c97a',b:'rgba(232,201,122,.3)'},
+  'Fisico':{bg:'rgba(232,154,111,.15)',c:'#e89a6f',b:'rgba(232,154,111,.3)'},
+  'Musical':{bg:'rgba(232,122,170,.15)',c:'#e87aaa',b:'rgba(232,122,170,.3)'},
+  'Destreza':{bg:'rgba(93,202,165,.12)',c:'#5dcaa5',b:'rgba(93,202,165,.3)'},
+};
+function cs(t){const c=CC[t]||CC['Formato'];return`background:${c.bg};color:${c.c};border:1px solid ${c.b}`}
+function ec(e){return e>=6?'#e87aaa':e>=5?'#e8c97a':e>=4?'#7ab8e8':'#6fcf8a'}
+function pills(tipos){return(tipos||[]).map(t=>`<span class="cat-pill" style="${cs(t)}">${t}</span>`).join('')}
+function epips(e,sm){return Array.from({length:6},(_,k)=>`<div class="e-pip" style="${sm?'width:4px;height:8px;':''}background:${k<e?ec(e):'var(--border2)'}"></div>`).join('')}
+const JUEGOS=[
+  {
+    nombre:"4 Cuadrantes",
+    jugadores:"4",
+    tipos:["Narrativo","Moderado"],
+    energia:4,
+    desc:"Las 4 personas se colocan en cada esquina formando un cuadrado en tarima. Cada lado del cuadrado tendrá una situación y personajes distintos. El moderador va rotándolos cada vez más rápido. Solo dos personas (1 cuadrante) actúa a la vez.",
+    pasos:["Cuatro personas forman un cuadrado en la tarima","Se asigna una situación y personajes distintos a cada lado","Solo actúan dos personas por cuadrante a la vez","El moderador rota las posiciones con velocidad creciente","En cada giro la historia avanza desde donde quedó"],
+    prompts:[
+      {label:"Lugar con giro",texto:"Un lugar cotidiano pero con algo que no debería estar ahí — por ejemplo, una sala de espera en el espacio, una carnicería vegana o un ascensor que no se detiene nunca.",por:"El giro evita los típicos 'un parque, una oficina' y le da material inmediato a los actores."},
+      {label:"Vínculo específico",texto:"Una relación concreta entre los dos personajes de cada cuadrante: dos científicos que acaban de descubrir el fuego, un entrenador y un atleta torpe, una pareja en su primera cita en un funeral.",por:"Definir el vínculo antes elimina el tiempo que se pierde estableciendo quiénes son."},
+      {label:"Conflicto inmediato",texto:"Un problema que debe resolverse ya: quién se queda con el último trozo de pizza, convencer a alguien de no saltar, repartir un botín inexistente.",por:"El conflicto listo acelera la entrada a la escena desde el primer segundo."},
+    ],
+    improv:["En cada giro avanza la historia a otro punto de la trama, no la repitas","Define personajes claros desde el inicio para que el relevo sea fluido","El moderador acelera cuando la energía esté alta"],
+  },
+  {
+    nombre:"Metiendo mano",
+    jugadores:"4-6",
+    tipos:["Formato","Publico","Fisico"],
+    energia:5,
+    desc:"La mitad de las personas son los personajes, y la otra mitad son las manos de los personajes. Funciona mejor con sugerencias de escenas que incluyan actividades que involucren mucho movimiento gestual de las manos.",
+    pasos:["Se asignan los roles: personajes y manos","Los de las manos se sitúan detrás de los personajes","Se define una escena que requiera movimiento gestual","Los personajes hablan, los de atrás actúan los brazos","Los personajes reaccionan a lo que hacen sus manos"],
+    prompts:[
+      {label:"Actividad con mucho gesto manual",texto:"Preparar una receta de cocina compleja — amasar pan, decorar un pastel o pelar frutas pequeñas. O arreglar un reloj antiguo pieza por pieza. O realizar una cirugía.",por:"Funciona mejor con situaciones que exijan movimiento manual preciso y continuo. El juego se cae si las manos no tienen qué hacer."},
+      {label:"Versiones alternativas",texto:"Una rutina de belleza: maquillarse, afeitarse con navaja, ponerse lentes de contacto. O un laboratorio de química mezclando pociones.",por:""},
+    ],
+    improv:["Mantén sincronización estrecha entre gestos faciales del personaje y acciones de las manos","Acepta y justifica cualquier movimiento imprevisto — el error físico es la comedia","Elige actividades cotidianas que impliquen mucha manipulación"],
+  },
+  {
+    nombre:"Edición limitada",
+    jugadores:"4+",
+    tipos:["Formato"],
+    energia:4,
+    desc:"En escena son 2 personas a la vez. Se hacen 2 equipos. El juego consiste en que los personajes no pueden hablar con palabras que empiecen con una letra específica. Le vamos subiendo la dificultad agregando más letras.",
+    pasos:["Se forman dos equipos, uno a cada lado del escenario","Cada equipo envía a un representante a escena","El público elige una letra específica para limitar el habla","Los participantes actúan sin decir palabras que contengan dicha letra","Se aumenta la dificultad agregando más letras prohibidas"],
+    prompts:[
+      {label:"Letra para el moderador",texto:"Letras que más aparecen en palabras en español: N, S, A. Empieza con una y agrega más según avanza el juego.",por:"Elegir letras frecuentes hace que la restricción sea genuinamente difícil desde el primer momento."},
+    ],
+    improv:["Si tu compañero comete un error sigue el juego de manera entusiasta","Prioriza frases cortas y directas para reducir el margen de error","Apóyate en el lenguaje corporal para comunicar lo que no puedes decir"],
+  },
+  {
+    nombre:"Maniquí",
+    jugadores:"3",
+    tipos:["Formato","Publico","Fisico"],
+    energia:3,
+    desc:"Dos personas permanecerán totalmente estáticas y solo podrán moverse si la 3ra persona los mueve. La 3ra persona debe moverlos según lo que está ocurriendo en escena.",
+    pasos:["Dos personas permanecen estáticas","Solo pueden moverse si la tercera persona las mueve","La tercera persona las mueve según la situación en escena"],
+    prompts:[
+      {label:"Lugar que exija movimiento preciso",texto:"Un lugar específico donde el movimiento físico sea limitado o muy preciso: una cabina de estética, un taller de alta costura, una nave espacial estrecha.",por:"El lugar justifica naturalmente por qué alguien estaría moviendo a otra persona."},
+      {label:"Relación inusual entre los tres",texto:"Una relación que justifique la dinámica física: un científico loco y sus dos creaciones, un conservador de museo y dos estatuas que cobran vida, un coreógrafo exigente con sus bailarines.",por:""},
+      {label:"Estilo cinematográfico",texto:"Un género para la escena completa: terror, comedia slapstick, película de superhéroes.",por:"El género unifica el tono y ayuda a los tres a improvisar en la misma dirección."},
+    ],
+    improv:["La persona que mueve debe ser creativa y proactiva para generar composiciones visuales interesantes","Los actores estáticos deben mantener tensión corporal para facilitar los movimientos","La 3ra persona debe cuidar la seguridad de sus compañeros al manipular sus extremidades"],
+  },
+  {
+    nombre:"El escritor",
+    jugadores:"2-4",
+    tipos:["Narrativo","Formato","Moderado","Publico"],
+    energia:3,
+    desc:"Un escritor da rienda suelta a sus personajes. En cada oportunidad agrega una acotación después de cada frase del personaje. Ejemplo — Personaje: 'Sí acepto!' / Escritor: 'Dijo ella, mientras él se amarraba los cordones.'",
+    pasos:["Un performer es el escritor","Los demás son sus personajes","El personaje dice una frase","El escritor agrega una acotación que describe la acción","Se alterna diálogo y acotación"],
+    prompts:[
+      {label:"Para el escritor — restricciones de acotación",texto:"Cambiar repentinamente la emoción del personaje a una totalmente opuesta a lo que dice. O agregar una limitación física externa, como si el suelo estuviera muy caliente o hubiera gravedad cero. O introducir un objeto imaginario estorboso que el personaje deba manipular mientras habla.",por:"Las mejores acotaciones contradicen o añaden una capa inesperada a lo que el personaje dice. Estos prompts activan esa lógica."},
+    ],
+    improv:["Busca que las acotaciones contradigan o añadan una capa inesperada a lo que el personaje dice","Describe acciones físicas concretas y detalladas","Utiliza diferentes tonos de voz para diferenciar el personaje del narrador"],
+  },
+  {
+    nombre:"Mensajes destacados",
+    jugadores:"Todos",
+    tipos:["Formato"],
+    energia:5,
+    desc:"Al iniciar la noche le pedimos al público que escriba en un papelito un mensaje destacado que tenga en sus chats de WhatsApp. Los actores se reparten los mensajes y los usan reiteradamente como parte de su diálogo. No pueden leerlos antes — los descubren al actuar.",
+    pasos:["El público escribe un mensaje destacado de su WhatsApp en un papel","Los actores se reparten los mensajes sin leerlos","Los actores integran los mensajes en su diálogo de forma reiterada","Los mensajes se leen en el momento de actuar, sin lectura previa"],
+    prompts:[
+      {label:"Qué pedirle al público",texto:"Escribe una frase que parezca sacada de contexto o que sea difícil de explicar — por ejemplo: 'No preguntes, solo trae la pala'. O un mensaje con una emoción muy marcada: sorpresa, enojo o alegría extrema. O una instrucción o pedido inusual que hayas recibido recientemente.",por:"Mensajes cortos y fuera de contexto son los que mejor funcionan. El objetivo es que el actor tenga que justificar algo absurdo dentro de la escena."},
+      {nota:"Antes del show: insistir en que los mensajes sean cortos — máximo una frase. Los mensajes largos pierden el impacto."},
+    ],
+    improv:["Justifica el contenido del mensaje dentro de la escena para darle coherencia","Reacciona con honestidad emocional al descubrir el texto — la sorpresa es la comedia","Evita anticipar la lectura; deja que la sorpresa guíe tu reacción"],
+  },
+  {
+    nombre:"Freeze",
+    jugadores:"2+",
+    tipos:["Formato","Narrativo"],
+    energia:5,
+    desc:"Dos personas improvisan una escena corta. Cualquier persona del público puede intervenir exclamando 'freeze', asumir la posición de uno de los personajes y empezar una escena completamente nueva.",
+    pasos:["Dos personas improvisan una escena","Un espectador interviene gritando FREEZE para detener la acción","El nuevo integrante asume la posición de uno de los actores","Se inicia una escena completamente nueva desde esa postura"],
+    prompts:[
+      {nota:"Este juego no pide sugerencia inicial — el material lo genera el público al intervenir. Lo que importa es que los improvisadores mantengan posturas físicas claras y dinámicas para dar puntos de entrada interesantes."},
+    ],
+    improv:["Mantén posturas físicas claras y dinámicas para ofrecer puntos de partida interesantes","Evita pensar demasiado la nueva historia — déjate llevar por la posición física que heredaste","Realiza el relevo de forma rápida y con energía para mantener el ritmo"],
+  },
+  {
+    nombre:"Freeze Slacker",
+    jugadores:"2+",
+    tipos:["Formato","Narrativo"],
+    energia:4,
+    desc:"Dos personas improvisan una escena corta. Cualquier persona del público puede intervenir exclamando 'freeze' y asumiendo la posición y el rol de uno de los personajes, creando una escena nueva usando ese personaje en cualquier tiempo o circunstancia.",
+    pasos:["Dos personas improvisan una escena","Un miembro del público interviene exclamando FREEZE","El interviniente asume la posición Y el rol de uno de los personajes","Se crea una escena nueva reusando ese personaje en otro contexto"],
+    prompts:[
+      {label:"Para arrancar la primera escena",texto:"Un vínculo o relación específica entre los personajes: jefe y empleado, astronautas en Marte, cirujanos en mitad de una operación.",por:"El primer par necesita una relación definida para que el juego arranque con material claro. Una vez que alguien interviene, el juego se sostiene solo."},
+    ],
+    improv:["Escucha con atención para captar el momento exacto en que la escena alcanza un punto de tensión o humor máximo","Mantén la posición física exacta de la persona a la que sustituyes","Propón un cambio de contexto radicalmente distinto al anterior"],
+  },
+  {
+    nombre:"Categorías",
+    jugadores:"2-4",
+    tipos:["Formato"],
+    energia:3,
+    desc:"Las personas en escena deben incluir en sus conversaciones palabras de la categoría que les demos — países, carros, grupos musicales — y usar dichas palabras alegóricamente a lo que quieran comunicar.",
+    pasos:["Asignar una categoría específica a los participantes","Los performers improvisan una escena","Deben incluir palabras de la categoría de forma alegórica","Las palabras se integran naturalmente, no como lista"],
+    prompts:[
+      {label:"Categorías que funcionan bien",texto:"Frutas y verduras, marcas de ropa, grupos musicales, marcas de carro, marcas de lujo, tipos de clima o fenómenos naturales, herramientas de construcción, nombres de animales, títulos de canciones, figuras geométricas.",por:"Las mejores categorías tienen palabras con mucha carga semántica o sonora que se presten a doble sentido. Evitar categorías abstractas."},
+    ],
+    improv:["Emplea los términos de la categoría de forma sutil y metafórica — nunca como un listado","Acepta la primera idea que venga a la mente para mantener la fluidez","Escucha activamente para que las palabras tengan coherencia con lo que está pasando"],
+  },
+  {
+    nombre:"Noticiero",
+    jugadores:"5+",
+    tipos:["Formato","Narrativo","Publico"],
+    energia:5,
+    desc:"2 presentadores de cabina y 3-4 reporteros de campo. Los presentadores interrumpen su programación para recibir noticias de sus reporteros, quienes entrevistan a ciudadanos de la audiencia. La noticia es un tema inventado definido con la audiencia.",
+    pasos:["Definir una noticia o tema con la audiencia antes de comenzar","Iniciar la programación con los dos presentadores de cabina","Interrumpir la transmisión para contactar a los reporteros de campo","Los reporteros entrevistan a personas de la audiencia sobre la noticia inventada"],
+    prompts:[
+      {label:"La noticia — hecho insólito",texto:"Pedir un hecho insólito específico: el robo de la estatua en un parque, una invasión de patitos de goma, el descubrimiento de un portal al siglo XV en un baño público.",por:"El hecho concreto y visual le da material inmediato a los reporteros. Una noticia abstracta ('hay un problema en el gobierno') no da nada con qué trabajar."},
+      {label:"Variante — noticias reales al absurdo",texto:"Tomar una noticia tendencia real del momento y pedirle al público que la lleven al absurdo más extremo.",por:""},
+    ],
+    improv:["Compromiso con el personaje: los presentadores mantienen seriedad informativa aunque la noticia sea absurda","Escucha activa: presta atención a los nombres y detalles específicos para que la historia mantenga coherencia","Si un ciudadano da una respuesta inesperada, úsala para aumentar la apuesta"],
+  },
+  {
+    nombre:"Noticias (con pantalla)",
+    jugadores:"5",
+    tipos:["Formato","Narrativo"],
+    energia:4,
+    desc:"2 presentadores de cabina y 3 reporteros de campo. Se proyecta una noticia detrás del reportero de campo pero el reportero nunca la ve y debe adivinarla en función de lo que los presentadores le vayan sugiriendo.",
+    pasos:["Dos presentadores de cabina interrumpen la programación para contactar a un reportero de campo","Se proyecta una imagen/noticia detrás del reportero que él no puede ver","Los presentadores dan pistas o hacen preguntas sobre la noticia","El reportero debe adivinar la noticia basándose en las pistas"],
+    prompts:[
+      {label:"Titulares para proyectar",texto:"Proponer un titular absurdo que involucre a un animal famoso en una situación humana. O un descubrimiento científico ridículo que cambia un hábito cotidiano. O un escándalo de una celebridad imaginaria en una situación surrealista.",por:"El titular tiene que ser visual y específico para que los presentadores puedan hacer preguntas útiles sin revelar la respuesta directamente."},
+    ],
+    improv:["Los presentadores dan pistas creativas que no sean demasiado obvias para mantener el suspenso","El reportero reacciona con convicción a la noticia ficticia aunque no sepa de qué se trata","Los presentadores construyen sobre las respuestas del reportero para guiarlo progresivamente"],
+  },
+  {
+    nombre:"Fotografía",
+    jugadores:"3+",
+    tipos:["Formato","Fisico"],
+    energia:3,
+    desc:"Se les propone una escena — un helicóptero, un día de examen en el colegio — y los participantes deben recrear una fotografía estática de ese momento, situación u objeto.",
+    pasos:["Proponer una escena o situación a los participantes","Los performers recrean una fotografía estática del momento","Cada performer debe ser claramente visible","La pose debe contar una historia sin movimiento"],
+    prompts:[
+      {label:"Escenas con mucha carga visual",texto:"Una cena familiar caótica donde todos hablan a la vez. El lanzamiento de un cohete espacial visto desde la sala de control. Un concierto de rock con fans en primera fila intentando tocar al artista. El descubrimiento de un tesoro pirata en una cueva.",por:"Escenas con muchas personas haciendo cosas distintas dan más opciones a cada actor para encontrar su lugar en la imagen."},
+    ],
+    improv:["Trabaja en equipo para que cada integrante aporte un elemento distinto y complementario","Evita el movimiento una vez establecida la pose","Asegúrate de que todos los participantes sean visibles en la composición"],
+  },
+  {
+    nombre:"Abecedario (historia)",
+    jugadores:"2-4",
+    tipos:["Formato","Narrativo"],
+    energia:3,
+    desc:"Los personajes desarrollan una escena en la que solo pueden hablar con la letra que sigue. El primero inicia su oración con la letra A, luego el que le sigue con la B, y así.",
+    pasos:["Los personajes desarrollan una escena improvisada","El primer participante inicia su frase con la letra A","El siguiente participante inicia su frase con la letra B","La secuencia continúa siguiendo el orden del alfabeto"],
+    prompts:[
+      {label:"Escena completa — lugar + relación + conflicto",texto:"Un lugar específico para situar la escena: una morgue, una juguetería. Un vínculo entre los personajes: médico y paciente hipocondríaco. Un conflicto disparatado que deban resolver: se acabó el papel higiénico en una cita romántica.",por:"Cuanto más definida esté la escena inicial, menos tiempo pierden los actores estableciendo el contexto y más pueden concentrarse en la restricción del abecedario."},
+      {label:"Objeto o emoción como detonante",texto:"Un objeto indispensable que debe aparecer en la historia: un mapa del tesoro, una pizza fría. O una emoción extrema que domine a todos: pánico total, euforia excesiva.",por:""},
+    ],
+    improv:["Prioriza la coherencia de la historia sobre la complejidad de la palabra inicial","Mantén frases cortas y directas para facilitar la continuidad del alfabeto","Reacciona físicamente a lo que sucede — la restricción de letras no limita tu expresividad"],
+  },
+  {
+    nombre:"Sound effects",
+    jugadores:"4",
+    tipos:["Formato","Narrativo","Publico"],
+    energia:4,
+    desc:"Dos personas improvisan y las otras dos hacen los sonidos de la escena. Los que improvisan deben responder a los sonidos como parte de su mundo.",
+    pasos:["Dos personas improvisan una escena","Otras dos personas realizan los efectos de sonido en tiempo real","Los improvisadores integran y responden a los sonidos en su actuación"],
+    prompts:[
+      {label:"Mundo con muchos sonidos",texto:"Una visita a una fábrica de maquinaria pesada. Una cocina de restaurante de lujo durante la hora pico. Un taller mecánico reparando un coche antiguo. Una selva tropical llena de animales exóticos.",por:"El juego necesita que la escena tenga razones naturales para producir sonidos constantes. Un lugar silencioso mata el juego."},
+    ],
+    improv:["Reacciona de inmediato a cada sonido para que la integración sea orgánica","Justifica los sonidos inesperados incorporándolos de forma lógica al entorno","Evita saturar la escena con ruidos constantes — permite que el diálogo fluya"],
+  },
+  {
+    nombre:"Escenografía viva",
+    jugadores:"4",
+    tipos:["Formato","Fisico"],
+    energia:4,
+    desc:"Dos personas improvisan y las otras dos son la utilería y escenografía de la escena usando sus cuerpos.",
+    pasos:["Dos personas asumen el rol de improvisadores","Otras dos personas actúan como utilería y escenografía","Se desarrolla la escena integrando a los compañeros como objetos físicos"],
+    prompts:[
+      {label:"Lugar con muchos objetos",texto:"Un lugar cotidiano con muchos objetos: un taller mecánico, una cocina de restaurante, un gimnasio, un quirófano. O un evento con elementos físicos: una fiesta de cumpleaños con piñata, una boda, un concierto.",por:"Cuantos más objetos posibles tenga el lugar, más trabajo tendrán los performers-escenografía y más rico el juego."},
+      {label:"Objetos específicos",texto:"Pedir objetos específicos que los actores deben representar: una puerta giratoria, una máquina de café, un sofá incómodo, un perchero.",por:""},
+    ],
+    improv:["Los objetos deben mantener la forma aunque sea incómodo","Los improvisadores deben realmente usar los objetos — no actuar alrededor de ellos"],
+  },
+  {
+    nombre:"Bicéfalos y Siameses",
+    jugadores:"4",
+    tipos:["Formato"],
+    energia:4,
+    desc:"Dos personas hablan al mismo tiempo. Las otras dos hablan una a la vez. Cuatro en una misma escena.",
+    pasos:["Dos performers hablan simultáneamente","Los otros dos hablan de uno en uno","Todos comparten la misma escena"],
+    prompts:[
+      {label:"Relación y emoción dominante",texto:"Una relación específica entre los personajes: científicos locos, una familia de superhéroes retirados, sospechosos de un robo. Y una emoción dominante para cada pareja de habla: los que hablan juntos están eufóricos, los que hablan solos están tristes.",por:"Definir la relación Y la emoción por pareja les da a los actores dos capas de trabajo simultáneas, lo que hace la escena más interesante."},
+    ],
+    improv:["Coordina el ritmo y el tono con tu compañero cuando hablen al mismo tiempo para que suene unificado","Utiliza el contacto visual para sincronizar el inicio y el final de las frases","Asegúrate de que las historias de ambos grupos tengan coherencia entre sí"],
+  },
+  {
+    nombre:"Primera cita",
+    jugadores:"4",
+    tipos:["Narrativo","Publico"],
+    energia:4,
+    desc:"Se invita a una pareja real del público. La pareja narra su historia y dos improvisadores la reproducen. La pareja juzga con corneta (error) y campana (correcto).",
+    pasos:["Se invita a una pareja del público y a dos improvisadores","La pareja narra la historia de cómo se conocieron y su primera cita","Los improvisadores representan el relato en el escenario","La pareja utiliza una corneta y una campana para señalar aciertos o errores"],
+    prompts:[
+      {label:"Preguntas para la pareja",texto:"¿Cómo se conocieron? ¿Quién dio el primer paso? ¿Cómo surgió la idea de la primera cita? ¿Cómo transcurrió la primera cita? ¿Cuándo fue el primer beso y cómo?",por:""},
+      {label:"Detalles que enriquecen la actuación",texto:"¿Qué llevaban puesto ese día? ¿Cuál fue la primera impresión o pensamiento secreto al verse? ¿Hubo algún obstáculo o inconveniente durante la salida?",por:"Los detalles físicos y sensoriales son los que más fácilmente puede reproducir un actor. El primer pensamiento secreto siempre genera el mejor momento."},
+    ],
+    improv:["Escucha con atención cada detalle del relato — los pequeños son los más graciosos","Observa las reacciones de la pareja al contar su historia para saber dónde está la emoción","Mantén comunicación visual fluida con tu compañero para sincronizar acciones"],
+  },
+  {
+    nombre:"Frases limitadas",
+    jugadores:"4",
+    tipos:["Formato"],
+    energia:4,
+    desc:"2-3 improvisadores solo pueden hablar con 3 frases preestablecidas, las pueden decir en cualquier momento y cuantas veces quieran. 1 de los improvisadores tiene libertad total.",
+    pasos:["Seleccionar de dos a tres improvisadores que solo pueden usar tres frases asignadas","Asignar a un improvisador adicional libertad total para hablar","Los limitados repiten sus frases en cualquier momento","El libre debe justificar las frases repetitivas en la escena"],
+    prompts:[
+      {label:"Frases multiusos — técnica WhatsApp",texto:"Díganme lo último que le escribieron a alguien por WhatsApp cuando estaban muy enojados o muy felices.",por:"Las frases de WhatsApp ya tienen carga emocional y están fuera de contexto, lo que las hace perfectas para este juego."},
+      {label:"Técnica Puerta Cerrada",texto:"Imaginen que escuchan a sus vecinos discutir a través de la pared, pero solo oyen una frase suelta. ¿Qué frase sería esa?",por:"Este prompt genera frases cargadas de ambigüedad que funcionan en múltiples contextos."},
+      {label:"Técnica Cliché Universal",texto:"Digan una frase que todas las madres o padres dicen cuando están a punto de perder la paciencia.",por:"Las frases universales son reconocibles para el público, lo que amplifica el efecto cómico."},
+      {label:"Frases de reacción genéricas",texto:"Frases que funcionan como afirmación, negativa, espejo, neutral o aleatoria: 'No me sorprende en absoluto', 'Tú crees?', 'yo te lo advertí', 'no puedo seguir así', 'esto es un sueño hecho realidad'.",por:""},
+    ],
+    improv:["El improvisador libre debe esforzarse por justificar las frases repetitivas de sus compañeros","Los limitados deben variar la entonación y el contexto emocional de sus palabras","Elige el momento oportuno — no las digas seguidas"],
+  },
+  {
+    nombre:"Switch-Cambio",
+    jugadores:"4",
+    tipos:["Formato","Fisico","Moderado"],
+    energia:4,
+    desc:"Dos personas están delante y las otras dos están detrás. Solo improvisan los que están delante. Cuando el moderador dice Switch: los de adelante se intercambian los personajes. Cuando dice Cambio: los de adelante rotan con los de atrás.",
+    pasos:["Dos performers adelante, dos atrás","Solo improvisan los que están delante","Switch: los de adelante intercambian personajes","Cambio: los de adelante cambian con los de atrás","La escena continúa en el mismo punto"],
+    prompts:[
+      {label:"Para arrancar",texto:"Definir bien las voces y roles de los personajes antes de empezar: cómo hablan, qué quieren, cuál es su relación.",por:"En Switch-Cambio la claridad de los personajes es todo — si los personajes no están definidos, el intercambio no tiene gracia."},
+    ],
+    improv:["Continúa la historia siguiendo el diálogo, no repitiéndolo","Mantén posturas y estados emocionales claros para que el relevo pueda imitarlos fácilmente","Observa constantemente la escena mientras estás atrás para entrar con una propuesta coherente"],
+  },
+  {
+    nombre:"Diapositivas",
+    jugadores:"2",
+    tipos:["Formato","Narrativo"],
+    energia:4,
+    desc:"2 personas improvisan el contenido de una presentación previamente preparada sin su conocimiento, como si fueran expertos del tema.",
+    pasos:["Se proyecta una presentación que los participantes desconocen","Los participantes improvisan el contenido como expertos en el tema"],
+    prompts:[
+      {label:"Título de conferencia imposible",texto:"Un título para una conferencia científica sobre un tema inexistente: 'El impacto de la gravedad en el crecimiento de las uñas de los gatos' o 'Los beneficios del polvo lunar en la agricultura urbana'.",por:"El título imposible pero plausible obliga a los actores a comprometerse con el absurdo de forma seria."},
+      {label:"Perfil de los expertos",texto:"Definir quiénes son los expertos que exponen: especialistas en física cuántica aplicada a la cocina, historiadores de la evolución del botón de camisa.",por:""},
+      {label:"Palabra técnica central",texto:"Una palabra técnica o compleja que sea el eje de la charla: obsolescencia programada, fotosíntesis inversa, entropía emocional.",por:"Una palabra técnica real usada en contexto absurdo genera el mejor contraste."},
+    ],
+    improv:["Mantén un ritmo constante y acepta la primera idea que venga a la mente","Habla con total confianza, sin importar qué tan absurdos sean los contenidos","Aplica 'sí, y...' a cada imagen proyectada, incorporándola como si fuera esencial"],
+  },
+  {
+    nombre:"Corre Lola Corre",
+    jugadores:"2-4",
+    tipos:["Narrativo","Formato","Moderado"],
+    energia:4,
+    desc:"Los improvisadores desarrollan una escena de 2 minutos. Al finalizar el moderador le pide cambios a la audiencia: del mundo, de los personajes, del sistema. Los improvisadores repiten la misma escena con los cambios.",
+    pasos:["Los improvisadores desarrollan una escena inicial de 2 minutos","El moderador solicita cambios a la audiencia","Los improvisadores repiten la misma escena incorporando las sugerencias"],
+    prompts:[
+      {label:"Tipos de cambios para pedir",texto:"Cambiar el género cinematográfico: western, terror, musical, telenovela. O modificar la relación entre los personajes: de mejores amigos a enemigos mortales. O alterar la época: la prehistoria, el año 3000, cámara lenta.",por:"Los mejores cambios son los que afectan el cómo, no el qué. El mismo evento contado en géneros distintos es más rico que cambiar lo que pasa."},
+      {label:"Cambio físico",texto:"Introducir una condición física: sin huesos, sin gravedad, todo en cámara lenta.",por:""},
+      {label:"El inversión",texto:"Identificar qué es lo que más resaltó de la escena e invertirlo completamente.",por:"La inversión es el cambio más productivo — si el líder era el hombre, ahora los hombres piden permiso para hablar."},
+    ],
+    improv:["Juega con una estructura narrativa básica: inicio, desarrollo, fin; protagonista, antagonista, arco del personaje","Deja claros la relación y el punto de vista de cada personaje para que sea más fácil asignarle cambios notables","Demuestra los cambios con acciones, no con palabras"],
+  },
+  {
+    nombre:"Un mundo donde",
+    jugadores:"2+",
+    tipos:["Formato","Narrativo","Moderado"],
+    energia:3,
+    desc:"El público ofrece una sugerencia de un mundo que quisiera ver. Los improvisadores deben realizar escenas cortas en base a esa sugerencia.",
+    pasos:["El público propone una sugerencia de un mundo imaginario","Los improvisadores realizan escenas cortas basadas en dicha sugerencia"],
+    prompts:[
+      {label:"Mundos con reglas claras e inversas",texto:"Un mundo donde los hombres no existen. Una sociedad que vive bajo el agua. Un mundo donde los niños gobiernan a los adultos. Un mundo donde mentir es obligatorio.",por:"Los mejores mundos son los que invierten una regla obvia de nuestra realidad. La inversión genera consecuencias inmediatas que los actores pueden explorar."},
+    ],
+    improv:["No pienses demasiado y confía en la primera idea que venga a la mente","Las escenas deben ser cortas y dinámicas para mantener el interés","Explora las consecuencias del mundo, no solo la premisa"],
+  },
+  {
+    nombre:"Que dijiste?",
+    jugadores:"2+",
+    tipos:["Formato"],
+    energia:4,
+    desc:"Cuando un improvisador diga una frase, cualquiera de sus compañeros puede preguntarle '¿qué dijiste?' y este debe crear una nueva frase que rime con la última que dijo.",
+    pasos:["Un improvisador dice una frase","Un compañero pregunta '¿qué dijiste?'","El improvisador crea una nueva frase que rime con la anterior"],
+    prompts:[
+      {label:"Escena con terminología específica",texto:"Un laboratorio de química o un taller mecánico, para forzar rimas con términos técnicos. O un conflicto emocional intenso: una ruptura amorosa, una confesión dramática. O una profesión con lenguaje muy característico: piratas, astronautas, chefs de alta cocina.",por:"La terminología específica hace que las rimas sean más inesperadas y más graciosas. Evitar lugares genéricos donde todo es fácil de rimar."},
+    ],
+    improv:["Elige palabras finales sencillas para facilitar la creación de rimas rápidas","Prioriza la rima sobre la lógica para mantener la fluidez","Lanza la pregunta en momentos de alta energía para dinamizar la escena"],
+  },
+  {
+    nombre:"Catarata musical",
+    jugadores:"3+",
+    tipos:["Musical","Moderado","Destreza"],
+    energia:5,
+    desc:"Se desarrolla una escena y cuando el moderador decida, la escena continúa cantada en un género de su interés.",
+    pasos:["Iniciar el desarrollo de una escena","Esperar la señal del moderador","Continuar la escena cantando","Adaptar el canto al género musical indicado"],
+    prompts:[
+      {label:"Contraste de género",texto:"Un género musical que contraste con la situación: Death Metal en una panadería, ópera italiana en una pelea callejera, bossanova en una sala de urgencias.",por:"El contraste entre el género musical y la situación es el chiste central del juego. Cuanto más inesperado el par, mejor."},
+      {label:"Lugar inusual",texto:"Un lugar específico e inusual para la escena: el interior de una lavadora, el espacio exterior, un submarino.",por:""},
+      {label:"Emoción extrema",texto:"Una emoción extrema que cambie repentinamente el tono: euforia incontrolable por una mala noticia.",por:""},
+    ],
+    improv:["Las canciones no tienen que ser solo una continuación del discurso — también pueden ser descriptivas de la escena","No temas errores en la rima o la afinación; prioriza la intención dramática","Finaliza con un gesto contundente para volver al diálogo"],
+  },
+  {
+    nombre:"Drop the beat",
+    jugadores:"3+",
+    tipos:["Musical","Moderado","Destreza"],
+    energia:5,
+    desc:"Se desarrolla una escena y cuando el moderador diga 'Drop the beat', el último improvisador que tenía la palabra debe continuar su discurso en rap.",
+    pasos:["Los improvisadores desarrollan una escena con normalidad","El moderador indica el cambio con 'Drop the beat'","El último en hablar continúa su intervención improvisando un rap"],
+    prompts:[
+      {label:"Situación + vínculo",texto:"Un lugar inusual para una conversación: una biblioteca silenciosa, un funeral. Un vínculo específico entre los personajes: un dentista y un paciente con fobia. Un tema cotidiano para el rap: la frustración por el tráfico, el precio del pan.",por:"La situación absurda combinada con el tema cotidiano hace que el rap sea más inesperado y más rico."},
+    ],
+    improv:["No busques rimas complejas; prioriza el sentido de la historia y deja que la rima surja naturalmente","Mantén la energía alta y proyecta la voz para que el cambio sea impactante","Apóyate en conceptos dichos justo antes del cambio para asegurar la coherencia"],
+  },
+  {
+    nombre:"Soundtrack",
+    jugadores:"2+",
+    tipos:["Formato"],
+    energia:4,
+    desc:"Los improvisadores hacen una escena incluyendo la banda sonora en su situación. La música establece el mood al que deben responder.",
+    pasos:["Los improvisadores inician una escena","Se integra una banda sonora","La música establece el tono o ambiente","Los actores responden y adaptan su actuación al estímulo musical"],
+    prompts:[
+      {nota:"Este juego no pide sugerencia del público — el moderador controla la música. Lo que importa es que la selección de tracks tenga variedad de género y tempo para generar contrastes."},
+    ],
+    improv:["Escucha los cambios de ritmo o intensidad y refléjalos de inmediato en tus acciones","Deja que la melodía guíe tus emociones en lugar de planificar diálogos","Reacciona de forma física antes que verbal — el cuerpo responde al sonido antes que las palabras"],
+  },
+  {
+    nombre:"Objeción",
+    jugadores:"6",
+    tipos:["Formato","Moderado"],
+    energia:4,
+    desc:"2 equipos de 3. Un equipo hace una escena mientras el otro observa desde fuera. En cualquier momento el equipo de afuera puede objetar sobre algo que quieren cambiar, con sus razones. El moderador decide si procede.",
+    pasos:["Formar dos equipos de tres personas","Un equipo actúa mientras el otro observa","El equipo de afuera puede objetar cambios en cualquier momento","El moderador decide si procede","Si procede, los actores incorporan el cambio"],
+    prompts:[
+      {label:"Instrucción para el equipo objetor",texto:"Inicia señalando faltas obvias de improvisación: escucha, desarrollo, ritmo, status. Luego escala señalando temas satíricos, absurdos y no convencionales.",por:"Darle al equipo objetor una escalada clara les da estructura para improvisar sus objeciones."},
+    ],
+    improv:["Justifica las objeciones con argumentos creativos o absurdos","Mantén escucha activa mientras actúas para reaccionar rápidamente a los cambios","Acepta las decisiones del moderador con agilidad para no interrumpir el flujo"],
+  },
+  {
+    nombre:"La voz de la consciencia",
+    jugadores:"4",
+    tipos:["Formato","Narrativo"],
+    energia:3,
+    desc:"2 personas improvisan en escena y 2 personas hacen de sus pensamientos. En cualquier momento la consciencia puede intervenir. Los personajes en escena solo pueden escuchar sus propios pensamientos.",
+    pasos:["Dos personas improvisan una escena","Otras dos representan los pensamientos de los actores","Las consciencias intervienen en cualquier momento","Los personajes solo escuchan sus propios pensamientos"],
+    prompts:[
+      {label:"Relación con tensión interna",texto:"Un vínculo específico entre los dos personajes principales que tenga subtexto: dos astronautas en su primera misión juntos, un peluquero y un cliente exigente, dos desconocidos atrapados en un ascensor que ambos finjan estar bien.",por:"La voz de la consciencia funciona mejor cuando los personajes tienen algo que esconder. La tensión interna es el material."},
+      {label:"Conflicto incómodo",texto:"Un tema de conversación incómodo que los personajes deben tratar pero ninguno quiere decir directamente.",por:""},
+    ],
+    improv:["Revela subtextos y deseos ocultos — no lo que el personaje dice, sino lo que piensa","Mantén las intervenciones breves para no interrumpir el ritmo de la escena","Usa los pensamientos para generar contradicciones internas que compliquen la toma de decisiones"],
+  },
+  {
+    nombre:"Freeze Primera-Última frase",
+    jugadores:"2+",
+    tipos:["Formato"],
+    energia:4,
+    desc:"Cualquier persona de fuera puede parar la escena en cualquier momento y reemplazar a la última persona que habló, comenzando con la última frase exacta que dijo.",
+    pasos:["Cualquier persona externa puede detener la escena en cualquier momento","El relevo reemplaza a la última persona que habló","Se debe retomar la escena comenzando con la misma frase"],
+    prompts:[
+      {nota:"Este juego no pide sugerencia inicial. El material viene de las frases que van surgiendo. Lo clave es que los improvisadores digan frases completas y con carga dramática para dar buenos puntos de partida."},
+    ],
+    improv:["Escucha con extrema atención la última frase dicha para poder replicarla exactamente al entrar","Elige momentos de alta tensión o frases significativas para realizar el corte","Evita pensar demasiado — la regla de repetir la última frase ya te da el punto de partida"],
+  },
+  {
+    nombre:"Cámara lenta, rápida, rewind",
+    jugadores:"2+",
+    tipos:["Formato","Moderado"],
+    energia:4,
+    desc:"En cualquier momento el moderador puede indicar que la escena en desarrollo se haga en cámara lenta, rápida o hacia atrás.",
+    pasos:["Los participantes desarrollan una escena","El moderador indica: cámara lenta, rápida o rewind","Los actores ajustan inmediatamente su interpretación"],
+    prompts:[
+      {label:"Situación que provoque movimiento",texto:"Un trabajo de alta complejidad: una operación quirúrgica, un duelo de esgrima, una pelea de artes marciales. La preparación de una receta que requiere batir o cortar ingredientes rítmicamente. El intento de atrapar a un animal pequeño y muy rápido.",por:"La cámara lenta y el rewind necesitan que los actores tengan movimiento que memorizar y exagerar. Una escena de solo diálogo no funciona."},
+    ],
+    improv:["Exagera los gestos y movimientos para marcar claramente el cambio de velocidad","Memoriza tus movimientos físicos recientes para el rewind","Utiliza el silencio en cámara lenta para descubrir nuevos matices de expresión facial"],
+  },
+  {
+    nombre:"Géneros",
+    jugadores:"2+",
+    tipos:["Formato","Narrativo","Moderado"],
+    energia:4,
+    desc:"Los improvisadores crean una escena. El moderador puede cambiar el género en cualquier momento. Los improvisadores deben continuar la MISMA escena en el género indicado.",
+    pasos:["Los improvisadores comienzan a desarrollar una escena","El moderador interviene para cambiar el género en cualquier momento","Los actores continúan la misma historia adaptándose al nuevo estilo"],
+    prompts:[
+      {label:"Géneros para el moderador — clásicos",texto:"Cine de terror, ciencia ficción, telenovela mexicana, documental de naturaleza, tragedia de Shakespeare, realismo mágico.",por:""},
+      {label:"Géneros contemporáneos",texto:"Reality show de cocina, transmisión de deportes extremos, tutorial de YouTube, noticia de último minuto, podcast de autoayuda.",por:"Los formatos de medios contemporáneos son más reconocibles para el público actual y generan reacciones más inmediatas."},
+    ],
+    improv:["Mantén la continuidad de la trama principal — solo cambia el estilo, no lo que pasa","Exagera las características del género para que el cambio sea claro","Apóyate en el lenguaje corporal y el tono de voz para marcar el contraste entre estilos"],
+  },
+  {
+    nombre:"Ronda de Props",
+    jugadores:"3+",
+    tipos:["Formato","Fisico"],
+    energia:4,
+    desc:"A los improvisadores se les presentan unos props que no conocen y deben recrear situaciones o usos completamente distintos a los que realmente representan. No hay respuestas incorrectas.",
+    pasos:["Se presentan objetos desconocidos a los improvisadores","Los participantes recrean situaciones o usos creativos diferentes a los reales","No hay respuestas incorrectas"],
+    prompts:[
+      {label:"Para el moderador",texto:"Proponer objetos cotidianos o extraños para ser utilizados de formas creativas. Lo que importa es la forma y textura del objeto, no su uso real.",por:"El juego no necesita sugerencia del público — el material son los props. Cuanto más ambiguo el objeto visualmente, más rico el juego."},
+    ],
+    improv:["Enfócate en la acción física y en cómo interactúas con el objeto — no solo lo describas","Observa la forma y textura del prop para encontrarle un uso absurdo pero visualmente coherente","Lánzate con la primera idea que te sugiera el contacto con el elemento"],
+  },
+  {
+    nombre:"Doblaje desde fuera",
+    jugadores:"4",
+    tipos:["Formato"],
+    energia:3,
+    desc:"Dos improvisadores gesticulan una escena sin emitir sonido mientras los otros dos proveen las voces de los personajes desde afuera.",
+    pasos:["Dos improvisadores gesticulan en escena en silencio","Los otros dos proveen las voces desde afuera","Las voces deben sincronizarse con los movimientos"],
+    prompts:[
+      {label:"Título y relación",texto:"Definir un título para la escena y establecer una relación o vínculo entre los personajes antes de empezar.",por:"El título y la relación le dan a los dobladores suficiente contexto para improvisar voces coherentes desde el primer momento."},
+    ],
+    improv:["Mantén escucha activa para coordinar las voces con los movimientos corporales","Observa con atención la gestualidad y el ritmo de quienes están en escena","Utiliza diferentes matices vocales para diferenciar a los personajes"],
+  },
+  {
+    nombre:"Doblaje desde dentro",
+    jugadores:"2+",
+    tipos:["Formato","Destreza"],
+    energia:4,
+    desc:"Los improvisadores en escena hacen las voces de su compañero desde adentro de la escena. Nadie hace su propia voz.",
+    pasos:["Los improvisadores se sitúan en escena","Cada uno dobla la voz de su compañero en tiempo real","Nadie utiliza su propia voz durante toda la escena"],
+    prompts:[
+      {label:"Vínculo + situación de conflicto",texto:"Un vínculo inusual entre los personajes: cirujano y paciente miedoso. Y una situación de conflicto inminente: el momento antes de una confesión, una conversación que ambos evitan.",por:"El conflicto inminente da a los dobladores una dirección emocional clara para improvisar el tono de las voces."},
+    ],
+    improv:["Sincroniza tus movimientos con la voz que tu compañero está proyectando","Propón acciones físicas claras que den material a tu compañero para generar diálogos","Aprovecha los posibles errores de coordinación para generar comedia"],
+  },
+  {
+    nombre:"Última primera letra",
+    jugadores:"2+",
+    tipos:["Formato"],
+    energia:3,
+    desc:"Los improvisadores deben continuar la conversación a partir de la última letra de la última palabra que dijo su compañero.",
+    pasos:["Iniciar una conversación entre improvisadores","Identificar la última letra de la última palabra dicha","Comenzar la propia intervención con esa misma letra","Continuar el diálogo siguiendo esta regla"],
+    prompts:[
+      {label:"Escena con relación definida",texto:"Un lugar inusual para una primera cita: un cementerio, una estación espacial, el interior de un volcán. Una relación específica y extraña entre los personajes. Una situación de alta presión.",por:"La restricción de la última letra es tan exigente que conviene tener una escena muy definida para no perder tiempo estableciendo el contexto."},
+    ],
+    improv:["Escucha atentamente el final de cada frase para identificar la letra exacta","Evita terminar tus intervenciones con letras poco comunes","Mantén las oraciones cortas y directas para agilizar el ritmo"],
+  },
+  {
+    nombre:"Rewind",
+    jugadores:"2+",
+    tipos:["Formato","Destreza","Moderado"],
+    energia:4,
+    desc:"Los improvisadores desarrollan una escena. Cuando el moderador dice 'Rewind' los improvisadores deben rebobinar la escena físicamente hasta que el moderador diga 'Play'.",
+    pasos:["Desarrollo de una escena por parte de los improvisadores","El moderador dice 'Rewind'","Los actores rebobinan la escena físicamente","El moderador dice 'Play' para reanudar la acción"],
+    prompts:[
+      {label:"Actividad con muchos pasos físicos",texto:"Preparar una pizza desde cero, arreglar una bicicleta pinchada, bañarse en una tina con mucha espuma.",por:"El Rewind necesita que los actores tengan movimientos claros y secuenciados que puedan reproducir en reversa. Una escena de diálogo puro no funciona."},
+    ],
+    improv:["Memoriza tus movimientos físicos y diálogos recientes para replicarlos con precisión durante el rebobinado","Exagera los gestos y la velocidad al retroceder para añadir efecto cómico","Reacciona de forma inmediata y coordinada a las instrucciones del moderador"],
+  },
+  {
+    nombre:"Final alternativo",
+    jugadores:"4",
+    tipos:["Formato","Narrativo"],
+    energia:4,
+    desc:"2 personas observan la mitad de una escena creada por sus otros 2 compañeros, salen, y al regresar deben terminarla con un final alternativo.",
+    pasos:["Dos personas crean una escena y se detienen a la mitad","Los otros dos la observan hasta ese punto","Los observadores salen","Regresan para terminar la escena con un final alternativo"],
+    prompts:[
+      {label:"Personajes con arco claro",texto:"Oficios o arquetipos con características marcadas: un detective, un espía, un alumno muy listo. Vínculos emocionales concretos: hermanos que no se hablan, una pareja en su primera cita.",por:""},
+      {label:"Estilos y formatos",texto:"Géneros cinematográficos o tonos narrativos para los finales alternativos: cámara lenta, idioma extranjero inventado, terror, musical.",por:"Definir el estilo del final alternativo le da a los actores una dirección clara en vez de llegar sin nada al escenario."},
+    ],
+    improv:["Acepta la premisa establecida por los actores originales sin cambiar lo que ya pasó","Sé rápido y espontáneo al regresar — el ritmo depende de esa energía","Evita juzgar tus propias ideas y lánzate con la primera propuesta creativa"],
+  },
+  {
+    nombre:"Intenciones ocultas",
+    jugadores:"3+",
+    tipos:["Formato","Narrativo"],
+    energia:4,
+    desc:"Todos hacen una escena normal, excepto uno que tiene una misión secreta absurda que el público conoce pero sus compañeros no. El improvisador debe lograr cada propuesta integrándola en su historia.",
+    pasos:["El público recibe información sobre una misión secreta absurda","Los improvisadores inician una escena normal sin conocer la misión","Un jugador intenta cumplir el objetivo secreto sin romper la lógica","Los compañeros reaccionan de forma natural"],
+    prompts:[
+      {label:"Pedir al público 3 logros",texto:"Pedirle al público al menos 3 logros que debe alcanzar el improvisador: que todos se pongan de pie simultáneamente, que alguien mencione un animal exótico, que alguien empiece a susurrar, que un compañero le entregue una prenda, que alguien tararee una canción.",por:"Tres logros en vez de uno genera una escalada dramática — el público lleva la cuenta y celebra cada logro conseguido."},
+    ],
+    improv:["Actúa con total naturalidad para que tus compañeros no sospechen","Busca justificaciones lógicas dentro de la narrativa para provocar las acciones absurdas","Aprovecha los silencios o cambios de tema para introducir tu misión de forma orgánica"],
+  },
+  {
+    nombre:"Randominican",
+    jugadores:"2+",
+    tipos:["Formato","Narrativo"],
+    energia:4,
+    desc:"Se escogen palabras aleatorias del público. Los improvisadores deben recrear una escena donde involucren estas palabras de alguna manera.",
+    pasos:["Se solicitan palabras aleatorias al público","Los improvisadores crean una escena integrando obligatoriamente todas las palabras"],
+    prompts:[
+      {label:"Palabras a pedir",texto:"Una medida exacta o inusual (tres milímetros, un año luz). El nombre de un profesor que haya marcado su infancia. Una ciudad o país. Una profesión u oficio muy específico. Un objeto cotidiano en plural (grapadoras, paraguas, dentaduras). Una parte del cuerpo poco común. Un día feriado o celebración internacional.",por:"Cada categoría apunta a un tipo de palabra distinto — así las palabras que se obtienen tienen registros muy diferentes y dan más material para la escena."},
+    ],
+    improv:["Escucha atentamente todas las palabras antes de empezar","Justifica narrativamente la aparición de cada término","Distribuye el uso de las palabras entre los performers"],
+  },
+  {
+    nombre:"Props condicionados",
+    jugadores:"2+",
+    tipos:["Formato","Narrativo","Destreza"],
+    energia:4,
+    desc:"Se establecen 3 props del público, cada prop tiene una emoción o condición asignada. La persona que tenga dicho prop debe asumir la emoción que tiene a su cargo.",
+    pasos:["Se seleccionan tres objetos del público","Se asigna una emoción o condición a cada objeto","El participante actúa según la emoción vinculada al objeto que posee"],
+    prompts:[
+      {label:"Emociones y condiciones",texto:"Pedir emoción y/o condición al público. Ejemplos: euforia incontenible, paranoia extrema, melancolía profunda, arrogancia aristocrática, pánico repentino, seducción compulsiva, curiosidad infantil, nostalgia exagerada.",por:"Las emociones extremas y específicas son más fáciles de actuar que las genéricas. 'Tristeza' es difícil. 'Melancolía profunda' ya tiene un tono."},
+    ],
+    improv:["Comprométete totalmente con la emoción asignada","Evita nombrar la emoción directamente — demuéstrala a través de acciones y tono de voz","Reacciona a los estímulos de la escena de manera coherente con la condición impuesta"],
+  },
+  {
+    nombre:"Solo preguntas",
+    jugadores:"2+",
+    tipos:["Formato"],
+    energia:4,
+    desc:"Los improvisadores deben desarrollar una escena solo haciendo preguntas. Quien afirma algo queda fuera.",
+    pasos:["Los jugadores inician una escena","Los participantes solo pueden comunicarse utilizando preguntas","Quien afirma algo es reemplazado por otro performer"],
+    prompts:[
+      {label:"Lugar donde las preguntas son naturales",texto:"Una oficina de objetos perdidos, una confesión religiosa, una entrevista de trabajo, una consulta médica. Una relación jerárquica con tensión: un detective y un sospechoso, un padre interrogando a un adolescente que llegó tarde.",por:"Los contextos donde alguien está en posición de interrogar y otro en posición de explicarse generan una lógica natural de preguntas."},
+      {label:"Confusión o desorientación",texto:"Despertar en un lugar desconocido, ser un turista perdido, encontrarse en una fiesta a la que no se fue invitado.",por:""},
+    ],
+    improv:["Evita preguntas retóricas o que cierren la conversación","Escucha la pregunta del compañero para que tu respuesta-pregunta tenga sentido","El lenguaje corporal avanza la historia cuando las palabras no pueden"],
+  },
+  {
+    nombre:"Una sola letra",
+    jugadores:"2+",
+    tipos:["Formato"],
+    energia:3,
+    desc:"Los improvisadores solo pueden hablar con palabras que contengan la letra asignada por el moderador.",
+    pasos:["El moderador asigna una letra específica","Los improvisadores improvisan usando solo palabras con esa letra","Se puede asignar una letra diferente a cada performer"],
+    prompts:[
+      {label:"Letra por performer + lugar + conflicto",texto:"Elegir una letra del abecedario para cada improvisador: uno solo habla con palabras con 'A' y otro con 'E'. Un lugar específico donde ocurra la acción: un consultorio odontológico, una nave espacial. Un conflicto: dos vecinos discutiendo por una mascota.",por:"Asignar letras diferentes a cada performer multiplica el caos y la comedia — uno tiene palabras y el otro no."},
+    ],
+    improv:["Mantén un ritmo constante y evita las pausas largas","Si no encuentras una palabra adecuada, falla con naturalidad — el error es parte del juego"],
+  },
+  {
+    nombre:"El cuadrante del caos",
+    jugadores:"4",
+    tipos:["Formato","Narrativo","Destreza"],
+    energia:5,
+    desc:"En cada cuadrante tenemos una restricción diferente: una sola letra, solo preguntas, palabras limitadas, abecedario. Los performers cambian de regla al moverse entre cuadrantes.",
+    pasos:["Dividir la escena en cuatro cuadrantes","Asignar una regla diferente a cada zona","Los performers cambian de regla al moverse entre cuadrantes","La escena debe mantenerse coherente a pesar de las restricciones"],
+    prompts:[
+      {label:"Las cuatro restricciones",texto:"Una sola letra con la que deban empezar todas las palabras. Solo preguntas. Máximo 3 palabras por intervención. Abecedario para iniciar cada frase.",por:"Las restricciones tienen que ser claras y memorizables antes de empezar — si los actores no saben en qué cuadrante están, el caos es real y no funciona."},
+    ],
+    improv:["Define claramente las reglas de cada cuadrante antes de comenzar","Reacciona con rapidez al entrar en un nuevo cuadrante","Aprovecha el error como oportunidad cómica si alguien olvida la restricción"],
+  },
+  {
+    nombre:"Palabras limitadas",
+    jugadores:"2-4",
+    tipos:["Formato"],
+    energia:3,
+    desc:"Los improvisadores solo pueden hablar con la cantidad de palabras preestablecidas al inicio del juego. Uno puede hablar con 4 palabras, otro con 3, y así.",
+    pasos:["Determinar una cantidad fija de palabras para cada participante","Realizar la improvisación utilizando únicamente el número asignado","Mantener la restricción numérica en cada intervención"],
+    prompts:[
+      {label:"Escena con relación y conflicto",texto:"Un vínculo específico entre los personajes. Un lugar o escenario inusual. Un conflicto u objetivo inmediato que deban resolver.",por:"La restricción de palabras es tan exigente que necesitan una escena muy definida para no gastar sus pocas palabras estableciendo el contexto."},
+    ],
+    improv:["Utiliza el lenguaje corporal y la expresión facial para completar el sentido","Escucha la última palabra del compañero para que tu frase tenga sentido","Acepta el error con humor si alguien se pasa del límite"],
+  },
+  {
+    nombre:"Fill in the blank",
+    jugadores:"3",
+    tipos:["Formato","Narrativo","Publico"],
+    energia:3,
+    desc:"Dos improvisadores y una persona del público. Los dos improvisadores desarrollan una escena auxiliándose de la persona del público para terminar las frases que buscan.",
+    pasos:["Participan dos improvisadores y una persona del público","Los actores inician el desarrollo de una escena","La persona del público completa las frases que los improvisadores dejan abiertas"],
+    prompts:[
+      {label:"Para la escena inicial",texto:"Un vínculo específico entre los personajes. Un lugar o escenario inusual. Un conflicto u objetivo inmediato.",por:""},
+      {nota:"El voluntario del público debe ser elegido por entusiasmo visible, no al azar. La participación del voluntario es el juego — necesitas a alguien con energía."},
+    ],
+    improv:["Elige a alguien que se vea entusiasta y dispuesta a participar","Plantea frases con estructura clara para que al voluntario le resulte sencillo completar","Acepta con entusiasmo cualquier respuesta del público, por extraña que sea"],
+  },
+  {
+    nombre:"Doblaje recreado",
+    jugadores:"6",
+    tipos:["Formato","Narrativo"],
+    energia:4,
+    desc:"3 improvisadores hacen una escena de dos minutos mientras los otros 3 están afuera. Cuando los 3 de fuera entran, los de adentro repiten la escena en silencio y los de afuera proveen las voces.",
+    pasos:["Tres improvisadores crean una escena de 2 minutos","Los otros tres esperan fuera sin ver","Los de adentro repiten la escena en silencio","Los que esperaban entran y proveen las voces"],
+    prompts:[
+      {label:"Lugar + relación + conflicto",texto:"Un lugar poco convencional con mucho juego físico: una cocina de restaurante de lujo, un taller de inventos fallidos, una estación espacial. Una relación específica entre los tres personajes: tres hermanos que esconden un secreto, científicos trabajando en un experimento peligroso. Una situación de conflicto inminente: preparar una fiesta sorpresa que sale mal.",por:"La escena que los de afuera doblarán necesita mucha acción física clara. Si la primera escena es solo diálogo, los dobladores no tienen nada que interpretar."},
+    ],
+    improv:["Mantén una gestualidad clara y exagerada en la primera escena para facilitar la comprensión de los de afuera","Acepta y justifica cualquier diálogo o propuesta vocal que venga de afuera","Los errores de sincronización generan la mejor comedia — úsalos"],
+  },
+  {
+    nombre:"El oráculo",
+    jugadores:"3",
+    tipos:["Formato"],
+    energia:3,
+    desc:"3 improvisadores responden las preguntas más profundas del universo (que dará el público), una sola palabra cada uno por turno.",
+    pasos:["El público plantea preguntas profundas","Los tres improvisadores responden a las preguntas","La respuesta se construye diciendo una sola palabra cada uno por turno"],
+    prompts:[
+      {label:"Preguntas profundas y/o absurdas",texto:"¿Cuál es el propósito fundamental de la existencia humana? ¿Por qué el tiempo avanza solo hacia adelante y no hacia atrás? ¿Qué se encuentra en el límite donde termina el espacio infinito?",por:"Las mejores preguntas son las que no tienen respuesta real — así cualquier respuesta suena legítima y el absurdo es inherente."},
+    ],
+    improv:["Escucha atentamente la palabra del compañero anterior para mantener coherencia gramatical","Evita pensar la frase completa de antemano — deja que la respuesta surja espontáneamente","Prioriza una respuesta con sentido lógico sobre el chiste fácil"],
+  },
+  {
+    nombre:"La carta",
+    jugadores:"4",
+    tipos:["Formato"],
+    energia:3,
+    desc:"Dos improvisadores crean una carta una palabra a la vez. Los otros dos improvisadores les responden en el mismo formato.",
+    pasos:["Dos improvisadores redactan una carta, una palabra por turno","Los otros dos responden de la misma manera","El destinatario y el tema los da el público"],
+    prompts:[
+      {label:"Destinatario + motivo + tono",texto:"El destinatario de la carta: un ex amor, un jefe exigente, un alienígena, un objeto inanimado. El motivo: una renuncia inesperada, una declaración de amor secreta, una queja por un producto defectuoso. El tono emocional: melancólico, eufórico, pasivo-agresivo, solemne.",por:"Definir los tres — destinatario, motivo y tono — elimina la ambigüedad y permite a los cuatro actores trabajar en la misma dirección."},
+    ],
+    improv:["Escucha la palabra anterior para que la oración mantenga estructura gramatical coherente","Acepta giros inesperados y absurdos","Prioriza la fluidez grupal sobre intentar ser individualmente gracioso"],
+  },
+  {
+    nombre:"Más menos otra cosa",
+    jugadores:"2+",
+    tipos:["Formato","Narrativo","Moderado"],
+    energia:4,
+    desc:"Los improvisadores desarrollan una escena. Cuando el moderador dice 'Más' el último en hablar incrementa la intensidad de su última frase o gesto. 'Menos' la baja. 'Otra cosa' el improvisador hace una nueva propuesta.",
+    pasos:["Los improvisadores desarrollan una escena","Más: el último sube la intensidad de su última frase","Menos: baja la intensidad","Otra cosa: hace una propuesta completamente nueva"],
+    prompts:[
+      {label:"Lugar + jerarquía",texto:"Un lugar con reglas estrictas que facilite los cambios de intensidad: una biblioteca, un funeral. Una relación de jerarquía marcada para jugar con las dinámicas de poder: un dictador y su peluquero. Una ocupación extraña que requiera mucha gestualidad física: domador de pulgas, catador de pegamento.",por:"La jerarquía marcada hace que los cambios de intensidad sean más dramáticos — el subordinado sube demasiado, el poderoso baja demasiado."},
+    ],
+    improv:["Presta atención constante al moderador para reaccionar de inmediato","Explora diferentes matices emocionales y físicos al recibir Más o Menos","Evita pensar demasiado Otra cosa — la espontaneidad es la gracia"],
+  },
+  {
+    nombre:"Opción ABC",
+    jugadores:"2+",
+    tipos:["Formato","Narrativo","Moderado","Publico"],
+    energia:4,
+    desc:"Los improvisadores desarrollan una escena. En cualquier momento el moderador detiene la escena para preguntarle al público la siguiente acción. El moderador da tres alternativas: A, B, C.",
+    pasos:["Los improvisadores inician el desarrollo de una escena","El moderador detiene la actuación de forma espontánea","Se solicita al público elegir el rumbo de la historia","El moderador ofrece tres alternativas distintas para continuar","Los performers continúan con la opción elegida"],
+    prompts:[
+      {label:"Para arrancar la escena",texto:"Un título. Una relación entre los personajes. Una situación inicial.",por:""},
+      {label:"Instrucción para el moderador — las alternativas",texto:"Las opciones A, B y C deben ser muy contrastadas entre sí: una emoción repentina en los personajes, la entrada de un nuevo personaje con un objeto inesperado, una confesión sorprendente que cambie el rumbo, un evento climático, el inicio de un número musical.",por:"Las tres alternativas tienen que ser tan diferentes que la elección importe de verdad. Si las tres son similares, el voto del público no genera nada."},
+    ],
+    improv:["Acepta la dirección elegida sin dudar","Como moderador, parar en momentos de alta tensión dramática — no en medio de una frase"],
+  },
+  {
+    nombre:"Entrevistador-Doblaje",
+    jugadores:"3",
+    tipos:["Formato"],
+    energia:3,
+    desc:"Un improvisador hace de entrevistador para un especialista en algún tema de importancia, pero el especialista solo puede comunicarse a través de un traductor.",
+    pasos:["Un performer es el entrevistador","Otro es el especialista — habla solo en idioma inventado","El tercero es el traductor","El especialista solo se comunica a través del traductor"],
+    prompts:[
+      {label:"Profesión + idioma + tema",texto:"Una profesión altamente especializada: astrofísico, catador de alimentos para mascotas, diseñador de montañas rusas. Un idioma inventado o dialecto inexistente. Un tema absurdo para la entrevista: la migración de los gnomos de jardín, el arte de doblar calcetines, la política internacional de los pingüinos.",por:"El contraste entre la seriedad de la profesión y el tema absurdo de la entrevista genera la comedia. Cuanto más específica la profesión, mejor."},
+    ],
+    improv:["El traductor puede interpretar creativamente o equivocarse — eso es parte del juego","Si el especialista responde con intensidad de negación, el traductor puede asumirlo como afirmación tierna","Acepta los términos inventados por el traductor como verdades dentro del universo de la improvisación"],
+  },
+  {
+    nombre:"El interrogatorio",
+    jugadores:"3",
+    tipos:["Formato"],
+    energia:3,
+    desc:"Dos improvisadores hacen de policía bueno y policía malo. Un improvisador hace de 'acusado'. Los policías deben interrogarlo ofreciéndole la suficiente información para que el acusado adivine cuál fue el crimen que cometió.",
+    pasos:["Se le pide al público un crimen absurdo","Dos personas asumen los roles de policía bueno y policía malo","Un tercero actúa como el acusado","Los policías interrogan al acusado brindando pistas sobre el delito","El acusado intenta adivinar el crimen"],
+    prompts:[
+      {label:"El crimen — pedirlo al público",texto:"Un arma del crimen inusual: un pepinillo gigante, un calcetín usado. Un lugar específico y extraño donde ocurrió: el interior de un volcán, una tienda de pelucas. El motivo absurdo: por no compartir una galleta, por estornudar muy fuerte. Una relación peculiar entre el acusado y la víctima: eran compañeros de clase de mimo.",por:"Pedir las cuatro variables del crimen — arma, lugar, motivo, relación — garantiza que los policías tengan suficiente material para dar pistas sin revelar todo de golpe."},
+    ],
+    improv:["Define personalidades contrastadas y exageradas para los policías","Utiliza pistas progresivas que vayan de lo general a lo específico","Permite que el acusado se equivoque y usa sus errores para improvisar nuevas líneas de interrogatorio"],
+  },
+  {
+    nombre:"Serenata",
+    jugadores:"3+",
+    tipos:["Musical"],
+    energia:6,
+    desc:"Los improvisadores le hacen una canción improvisada a alguien del público. Puede jugarse en formato competitivo donde los performers compiten por enamorar al voluntario.",
+    pasos:["Seleccionar a una persona del público","Hacer preguntas para personalizar: guilty pleasures, amor platónico, cita ideal","Los performers improvisan canciones dedicadas a esa persona","En formato competitivo, el voluntario elige al ganador"],
+    prompts:[
+      {label:"Preguntas para el voluntario",texto:"¿Cuáles son tus guilty pleasures? ¿Algo que tu ex hacía mejor que tú? ¿Cuál era tu amor platónico de la adolescencia? ¿Tu cita ideal? ¿Un hobby o pasatiempo muy específico? ¿Un lugar del mundo al que sueñas viajar y por qué?",por:"Cada detalle personal que revela el voluntario es material directo para la canción. Cuanto más específico, más personal y más gracioso."},
+    ],
+    improv:["Escucha activamente los detalles que el voluntario comparta para incorporarlos en la letra","Reacciona con naturalidad a sus risas o gestos como parte de la improvisación","Mantén energía alta y colabora con tus compañeros en los coros"],
+  },
+  {
+    nombre:"Diccionario callejero",
+    jugadores:"2+",
+    tipos:["Formato","Moderado"],
+    energia:3,
+    desc:"Los improvisadores desarrollan una escena. El moderador puede detener el juego en cualquier momento sobre una palabra dicha por el improvisador. El improvisador debe darle una definición absurda/abstracta.",
+    pasos:["Los improvisadores inician el desarrollo de una escena","El moderador detiene el juego sobre una palabra dicha","El moderador repite la palabra en voz alta","El improvisador brinda una definición absurda del término","La escena continúa"],
+    prompts:[
+      {label:"Para la escena inicial",texto:"Un lugar inusual: una peluquería en el espacio, un búnker subterráneo. Una relación específica entre los personajes: un examinador severo y un estudiante despistado.",por:"El juego funciona mejor cuando los actores usan terminología variada en su diálogo — el moderador necesita palabras interesantes para detener."},
+    ],
+    improv:["Responde con la primera idea absurda que surja — la espontaneidad es todo","Utiliza un tono serio y convincente al dar la definición para resaltar el contraste","Retoma la acción dramática de inmediato tras la definición para no perder el ritmo"],
+  },
+  {
+    nombre:"Escena ciega",
+    jugadores:"6",
+    tipos:["Formato","Narrativo"],
+    energia:4,
+    desc:"3 improvisadores hacen una escena de 2 minutos. Los otros 3 solo escuchan lo que sucede. Luego, los que solo escucharon deben recrearla a partir de lo que entendieron.",
+    pasos:["Tres improvisadores realizan una escena de dos minutos","Otros tres integrantes escuchan el desarrollo sin verla","Los oyentes recrean la escena basándose en su interpretación"],
+    prompts:[
+      {label:"Elementos para la escena original",texto:"Un lugar específico. Un vínculo inusual entre los personajes. Un conflicto u objeto detonante. Un secreto que los que escuchan deben intentar descifrar.",por:"Definir el lugar y el conflicto hace que la primera escena tenga referencias concretas que los oyentes puedan captar y reproducir."},
+    ],
+    improv:["Escucha con extrema atención los detalles de la trama, nombres y conflictos","Enfócate en captar la atmósfera y el tono, no solo los hechos","Evita añadir información nueva — solo reproduce lo que escuchaste"],
+  },
+  {
+    nombre:"Armando",
+    jugadores:"3+",
+    tipos:["Narrativo"],
+    energia:3,
+    desc:"Una persona del público hace una historia corta que le ocurrió. Los improvisadores desarrollan escenas cortas a partir de esta historia — no es una dramatización literal.",
+    pasos:["Un espectador cuenta una historia corta personal","Los improvisadores escuchan sin interrumpir","Crean escenas inspiradas en elementos de la historia","No es reproducción literal — es inspiración libre"],
+    prompts:[
+      {label:"Cómo pedir la historia",texto:"Contar una historia que siempre cuentas a tus amigos. Relatar un encuentro inesperado con un desconocido en el transporte público. Una anécdota sobre un objeto que perdiste y luego encontraste en un lugar insólito. Una situación vergonzosa o divertida en una primera cita o entrevista laboral.",por:"Las mejores historias para este juego son las que tienen un detalle específico que salta — no las grandes tragedias sino el momento raro que nadie olvida."},
+    ],
+    improv:["Busca disparadores creativos, no hechos cronológicos","Selecciona un objeto, relación o ambiente mencionado como eje de una escena nueva","Explora puntos de vista de personajes secundarios que no fueron protagonistas en la historia"],
+  },
+  {
+    nombre:"Contrarreloj",
+    jugadores:"2-4",
+    tipos:["Formato","Narrativo"],
+    energia:5,
+    desc:"Los improvisadores desarrollan una escena de 2 minutos. Luego tienen que hacer la misma escena en 1 minuto, luego en 30 segundos, 15 y finalmente 5 segundos. No es hacerlo más rápido, sino editar.",
+    pasos:["Desarrollar una escena improvisada de 2 minutos","Repetir la misma historia en un lapso de 1 minuto","Realizar versiones sucesivas de 30, 15 y 5 segundos","Priorizar la edición del contenido sobre la velocidad"],
+    prompts:[
+      {label:"Título y lugar",texto:"Un título que sirva como ancla para la escena. Un lugar específico donde se desarrolla la acción.",por:"El título les da un referente compartido para las versiones editadas — cuando queden 5 segundos, necesitan poder identificar qué es lo más esencial."},
+    ],
+    improv:["Identifica los hitos narrativos clave en la primera versión para que la historia se mantenga coherente en las repeticiones","Evita simplemente hablar más rápido — la clave está en la síntesis","Utiliza el lenguaje corporal para comunicar información de forma instantánea"],
+  },
+  {
+    nombre:"Palabra entra palabra sale",
+    jugadores:"3+",
+    tipos:["Formato"],
+    energia:4,
+    desc:"Se les asigna una palabra a cada improvisador antes de comenzar la escena. Cuando dicha palabra sea mencionada, los improvisadores deben salir o entrar dependiendo si están dentro o afuera, justificando su acción.",
+    pasos:["Se asigna una palabra a cada improvisador","Inicia la escena con los jugadores dentro o fuera del escenario","Los improvisadores entran o salen cada vez que se menciona su palabra","Cada entrada o salida debe estar justificada dentro de la historia"],
+    prompts:[
+      {label:"Palabras de uso común",texto:"Palabras que sean de uso común pero que permitan contextos variados para facilitar el flujo de la escena. Un lugar inusual o estrecho para dificultar los movimientos. Una relación de alta tensión entre los personajes.",por:"Las palabras deben ser lo suficientemente comunes para que aparezcan naturalmente en la conversación pero no tan comunes que generen entradas y salidas sin sentido."},
+    ],
+    improv:["Mantén escucha activa constante para reaccionar inmediatamente cuando se mencione tu palabra","Prioriza la coherencia narrativa buscando excusas creativas para entrar o salir","Evita forzar la palabra propia de manera antinatural"],
+  },
+  {
+    nombre:"Inmersivo",
+    jugadores:"2+",
+    tipos:["Formato","Narrativo","Moderado"],
+    energia:3,
+    desc:"Los improvisadores desarrollan una escena. El público hace los sonidos del ambiente que el moderador va pidiendo en una pantalla o pizarra. Los improvisadores deben adivinar qué está sucediendo.",
+    pasos:["Los improvisadores comienzan a desarrollar una escena","El moderador indica un ambiente al público mediante una pantalla o pizarra","El público realiza los sonidos correspondientes al entorno","Los improvisadores intentan adivinar el ambiente que el público está representando"],
+    prompts:[
+      {label:"Ambientes fáciles de representar con sonidos",texto:"Naturaleza, ciudad, barrio, tormenta, campo, horda de zombies, elecciones, abajo del agua, en el mar.",por:"Los ambientes tienen que ser reconocibles a través de sonidos únicamente. Ambientes muy visuales pero silenciosos no funcionan."},
+    ],
+    improv:["Reacciona físicamente a los sonidos antes de intentar adivinarlos — integra el ambiente en la narrativa","Colabora con tu compañero compartiendo percepciones a través del diálogo para deducir el lugar en conjunto","Evita las adivinaciones directas y apresuradas; explora el espacio para que el público intensifique sus efectos"],
+  },
+  {
+    nombre:"Director frustrado",
+    jugadores:"X",
+    tipos:["Formato","Moderado"],
+    energia:4,
+    desc:"Un jugador hace de director, los otros improvisadores hacen una escena, el director frustrado puede entrar en cualquier momento gritando corte y dando nuevas instrucciones que los improvisadores deben aplicar a la escena.",
+    pasos:["Un jugador asume el rol de director y los demás actúan una escena","El director interrumpe en cualquier momento gritando corte","El director da nuevas instrucciones a los improvisadores","Los improvisadores retoman la escena aplicando los cambios indicados"],
+    prompts:[
+      {label:"Título para la escena",texto:"Díganme un título de película o serie que todavía no existe pero que todos querrían ver",por:"El título ya establece un género y un tono — el director tiene material inmediato para frustrar o redirigir."},
+    ],
+    improv:["Los improvisadores deben aceptar inmediatamente la nueva indicación sin cuestionarla, integrándola de forma natural al flujo de la historia","Mantén la atención en el director incluso mientras actúas, para reaccionar al instante cuando se escuche el grito de corte"],
+  },
+  {
+    nombre:"Entrevista hacia atras",
+    jugadores:"2",
+    tipos:["Formato","Destreza"],
+    energia:3,
+    desc:"Un improvisador hace de entrevistador mientras el otro hace de entrevistado. La entrevista va hacia atrás con cada intervención respondiendo a la intervención anterior.",
+    pasos:["Se eligen dos personas para los roles de entrevistador y entrevistado","La entrevista se desarrolla en orden inverso","Cada intervención debe responder lógicamente a lo que se diría previamente en el tiempo de la historia"],
+    prompts:[
+      {label:"Profesión del entrevistado",texto:"Díganme una profesión tan especializada que nadie sabe bien qué hace pero todos respetan",por:"La profesión da un hilo conductor temático para que las preguntas y respuestas —al revés— tengan coherencia."},
+      {label:"Tema de la entrevista",texto:"Díganme un logro ridículo que alguien podría considerar el mejor momento de su vida",por:"El tema absurdo hace más rica la cronología inversa — hay más que revelar yendo hacia atrás."},
+    ],
+    improv:["Escuchar atentamente la respuesta anterior para que la pregunta siguiente encaje de forma orgánica en la cronología inversa","Mantener la calma y evitar pausas largas para no romper el flujo de la conversación","Establecer hechos claros desde el inicio que den contexto a la relación entre los personajes"],
+  },
+  {
+    nombre:"Frases robadas",
+    jugadores:"4",
+    tipos:["Formato"],
+    energia:4,
+    desc:"Los improvisadores se dividen en pareja, se le pide al público dos situaciones contrarias/complementarias. Solo actúa una pareja de improvisadores a la vez, y la pauta para los otros improvisadores es tomar una frase de la otra pareja para iniciar y/o continuar su escena. Así se van alternando.",
+    pasos:["Dividir a los improvisadores en parejas","Solicitar al público dos situaciones contrarias o complementarias","Actuar una sola pareja a la vez de forma alternada","Iniciar o continuar la escena utilizando una frase dicha por la pareja anterior"],
+    prompts:[
+      {label:"Dos situaciones opuestas",texto:"Díganme dos lugares que sean polos opuestos — uno donde nunca querrías estar y uno donde siempre quisieras quedarte",por:"El contraste entre situaciones alimenta el choque de energías cuando las frases se roban entre parejas."},
+      {label:"Alternativa — situaciones complementarias",texto:"Díganme dos momentos que siempre van juntos aunque nadie los planifica: uno que empieza algo y uno que lo termina",por:""},
+    ],
+    improv:["Escucha atentamente la última frase de la pareja anterior para asegurar una transición fluida","Evita planificar tu intervención y reacciona de forma espontánea a lo que recibes","Mantén la diferencia de energía entre ambas parejas para alimentar el contraste"],
+  },
+  {
+    nombre:"Primera frase, ultima frase",
+    jugadores:"2",
+    tipos:["Formato"],
+    energia:3,
+    desc:"Los improvisadores deben usar la última frase del compañero para iniciar su propia frase.",
+    pasos:["Dos o más improvisadores inician una escena","El primer jugador dice una frase inicial","El siguiente jugador debe comenzar su frase utilizando exactamente la última frase o palabras dichas por su compañero","La dinámica continúa manteniendo la coherencia de la historia bajo esta restricción lingüística"],
+    prompts:[
+      {label:"Frase de cierre conocida",texto:"Díganme un refrán popular o frase famosa que sea la última línea de la escena",por:"La frase conocida como destino le da a los actores una dirección — tienen que llegar ahí de forma natural."},
+      {label:"Relación secreta",texto:"Díganme una relación inusual o secreta entre los personajes que se revele a través del diálogo",por:""},
+    ],
+    improv:["Escucha activamente para captar la última palabra con precisión","Acepta la propuesta del compañero para dar continuidad a la historia","No pienses de antemano tu frase para evitar perder el hilo de la conversación"],
+  },
+  {
+    nombre:"Traductor",
+    jugadores:"4",
+    tipos:["Formato"],
+    energia:4,
+    desc:"Los improvisadores en escena hablan en un idioma ininteligible, los improvisadores de afuera traducen según lo que ellos entienden que se está comunicando.",
+    pasos:["Dos improvisadores actúan en escena hablando en un idioma inventado o ininteligible","Los otros improvisadores permanecen fuera de la escena","Los improvisadores de afuera traducen al público lo que interpretan que está sucediendo o comunicándose en escena"],
+    prompts:[
+      {label:"Escena para los de adentro",texto:"Díganme una situación donde lo que se dice con el cuerpo es completamente diferente a lo que las palabras dirían",por:"El contraste entre el lenguaje corporal y la traducción inventada es el motor del juego."},
+    ],
+    improv:["Escuchar activamente no solo las palabras, sino el tono y lenguaje corporal","Interpretar las emociones de los compañeros para dar sentido a la traducción","Mantener la fluidez y el ritmo en el idioma inventado para facilitar la interpretación"],
+  },
+  {
+    nombre:"Roba frase",
+    jugadores:"4",
+    tipos:["Formato"],
+    energia:4,
+    desc:"2 parejas actúan de manera independiente e intercalada, la primera pareja inicia la improvisación y la segunda pareja toma la frase final para iniciar su propia escena y así se van intercalando.",
+    pasos:["Dos parejas actúan de manera independiente e intercalada","La primera pareja inicia la improvisación","La segunda pareja toma la frase final de la anterior para iniciar su propia escena","Se repite la dinámica de forma continua entre ambas parejas"],
+    prompts:[
+      {label:"Dos mundos para las dos parejas",texto:"Díganme dos lugares cotidianos con un giro inesperado — uno para cada pareja",por:"Dar un mundo a cada pareja desde el inicio evita que las dos parejas terminen en el mismo tono."},
+    ],
+    improv:["Escucha bien la frase final de la pareja anterior para integrarla con sentido","Mantén la agilidad para evitar baches entre el cambio de parejas","Aporta claridad en cada intervención para que la trama avance"],
+  },
+];
+
+
+const ALL_TIPOS=[...new Set(JUEGOS.flatMap(g=>g.tipos))].sort();
+
+// ── STATE ─────────────────────────────────────────────────────
+let playlist=[];
+let selectedIdx=null;
+let expandedIdx=null; // accordion open index (mobile portrait)
+let modalMode='add';
+let insertAfterIdx=null;
+let swapIdx=null;
+let mFilterTipo='todos'; // modal filter
+let activeFilters=[]; // main playlist filters (multi-select)
+let currentSug=null;
+let playlistSort='none'; // 'none' | 'alpha' | 'cat'
+let modalSort='alpha';   // 'alpha' | 'cat'
+
+// ── DETAIL HTML ───────────────────────────────────────────────
+function buildDetailHTML(g){
+  const steps=g.pasos.map((p,i)=>`<div class="step"><div class="step-n">0${i+1}</div><div class="step-t">${p}</div></div>`).join('');
+  let promptsHtml='';
+  const hasPrompts=g.prompts&&g.prompts.length>0&&g.prompts.some(p=>p.label||p.texto||p.nota);
+  if(!hasPrompts){
+    promptsHtml=`<div class="no-prompt">Este juego no requiere sugerencia del público — el material viene del formato o del moderador.</div>`;
+  } else {
+    g.prompts.forEach(p=>{
+      if(p.nota) promptsHtml+=`<div class="prompt-note">${p.nota}</div>`;
+      else if(p.label||p.texto) promptsHtml+=`<div class="prompt-card">${p.label?`<div class="prompt-label">${p.label}</div>`:''}<div class="prompt-text">"${p.texto}"</div>${p.por?`<div class="prompt-why">${p.por}</div>`:''}</div>`;
+    });
+  }
+  const improvHtml=g.improv&&g.improv.length>0
+    ? g.improv.map(t=>`<div class="tip">${t}</div>`).join('')
+    : `<div class="no-prompt">Sin sugerencias específicas registradas.</div>`;
+  return `<div class="dname">${g.nombre}</div>
+<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">${pills(g.tipos)}</div>
+<div class="jugadores-badge">👥 ${g.jugadores} jugadores · <span style="display:flex;gap:2px;margin-left:4px">${epips(g.energia)}</span></div>
+<div class="dsec"><div class="dsec-lbl">Descripción</div><div class="dtext">${g.desc}</div></div>
+<div class="dsec"><div class="dsec-lbl">Paso a paso</div><div class="steps">${steps}</div></div>
+<div class="dsec"><div class="dsec-lbl">Cómo pedir al público</div>${promptsHtml}</div>
+<div class="dsec"><div class="dsec-lbl">Para los improvisadores</div><div class="tips">${improvHtml}</div></div>`;
+}
+
+// ── SIDEBAR (landscape/desktop) ───────────────────────────────
+function showSidebar(g){
+  document.getElementById('sidebar-empty').style.display='none';
+  const sd=document.getElementById('sidebar-detail');
+  sd.style.display='block';
+  sd.innerHTML=`<div class="d-panel">${buildDetailHTML(g)}</div>`;
+}
+
+// ── ACCORDION (portrait mobile) ───────────────────────────────
+function isPortraitMobile(){
+  return window.innerWidth<768 || (window.innerWidth<1024 && window.innerHeight>window.innerWidth);
+}
+
+function toggleAccordion(idx){
+  if(expandedIdx===idx){
+    // collapse
+    expandedIdx=null;
+  } else {
+    expandedIdx=idx;
+  }
+  // update DOM without full re-render
+  document.querySelectorAll('.slot-wrap').forEach((wrap,i)=>{
+    const slotEl=wrap.querySelector('.slot');
+    const detailEl=wrap.querySelector('.slot-detail');
+    if(!slotEl||!detailEl)return;
+    const thisIdx=parseInt(wrap.dataset.wrapIdx);
+    if(thisIdx===expandedIdx){
+      slotEl.classList.add('selected','expanded');
+      detailEl.classList.add('open');
+      if(!detailEl.dataset.filled){
+        const g=playlist[thisIdx]?.game;
+        if(g) detailEl.querySelector('.slot-detail-inner').innerHTML=buildDetailHTML(g);
+        detailEl.dataset.filled='1';
+      }
+    } else {
+      slotEl.classList.remove('selected','expanded');
+      detailEl.classList.remove('open');
+    }
+  });
+}
+
+// ── SELECT GAME ───────────────────────────────────────────────
+function selectGame(e,idx){
+  if(e.target.closest('button')||e.target.tagName==='INPUT')return;
+  const item=playlist[idx];
+  if(!item||item.isBreak||item.isCustom)return;
+  selectedIdx=idx;
+  if(isPortraitMobile()){
+    toggleAccordion(idx);
+  } else {
+    // sidebar
+    expandedIdx=null;
+    showSidebar(item.game);
+  }
+  renderPlaylist();
+}
+
+// ── FILTER BAR ────────────────────────────────────────────────
+function renderFilterBar(){
+  const bar=document.getElementById('filter-bar');
+  let html=`<span class="filter-lbl">Filtrar:</span>`;
+  ALL_TIPOS.forEach(t=>{
+    const on=activeFilters.includes(t);
+    html+=`<button class="fpill${on?' active':''}" onclick="toggleFilter('${t}')">${t}</button>`;
+  });
+  if(activeFilters.length>0){
+    html+=`<button class="filter-clear" onclick="clearFilters()">✕ Limpiar</button>`;
+  }
+  bar.innerHTML=html;
+}
+
+function toggleFilter(t){
+  if(activeFilters.includes(t)){
+    activeFilters=activeFilters.filter(f=>f!==t);
+  } else {
+    activeFilters.push(t);
+  }
+  renderFilterBar();
+  applyFilters();
+}
+
+function clearFilters(){
+  activeFilters=[];
+  renderFilterBar();
+  applyFilters();
+}
+
+function applyFilters(){
+  const items=document.querySelectorAll('.slot-wrap');
+  let visible=0;
+  items.forEach(wrap=>{
+    const idx=parseInt(wrap.dataset.wrapIdx);
+    const item=playlist[idx];
+    if(!item||item.isBreak||item.isCustom){
+      wrap.style.display='';visible++;return;
+    }
+    if(activeFilters.length===0){
+      wrap.style.display='';visible++;
+    } else {
+      const matches=item.game.tipos.some(t=>activeFilters.includes(t));
+      wrap.style.display=matches?'':'none';
+      if(matches)visible++;
+    }
+  });
+  const vc=document.getElementById('visible-count');
+  if(vc)vc.textContent=activeFilters.length>0?`(${visible} visibles)`:'';
+}
+
+// ── STATS ─────────────────────────────────────────────────────
+function updateStats(){
+  const items=playlist.filter(p=>!p.isBreak&&!p.isCustom);
+  const total=playlist.reduce((s,p)=>s+(parseInt(p.mins)||0),0);
+  document.getElementById('sj').textContent=items.length;
+  document.getElementById('sm').textContent=total>0?total:'—';
+}
+
+function setMins(idx,val){
+  if(playlist[idx])playlist[idx].mins=parseInt(val)||0;
+  updateStats();
+  updateAccumulators();
+}
+
+function updateAccumulators(){
+  let acc=0;
+  playlist.forEach((item,i)=>{
+    acc+=parseInt(item.mins)||0;
+    const el=document.getElementById('accum-'+i);
+    if(el)el.textContent=acc>0?'acumulado: '+acc+' min':'';
+  });
+}
+
+// ── SORT HELPERS ─────────────────────────────────────────────
+function setPlaylistSort(mode){
+  playlistSort=mode;
+  ['none','alpha','cat'].forEach(m=>{
+    const btn=document.getElementById('sort-'+m);
+    if(btn)btn.classList.toggle('active',m===mode);
+  });
+  renderPlaylist();
+}
+
+function getSortedPlaylist(){
+  if(playlistSort==='none')return [...playlist];
+  // Separate breaks/customs from games
+  const games=playlist.filter(p=>!p.isBreak&&!p.isCustom&&p.game);
+  const others=playlist.filter(p=>p.isBreak||p.isCustom);
+  const sorted=[...games].sort((a,b)=>{
+    if(playlistSort==='alpha')return a.game.nombre.localeCompare(b.game.nombre,'es');
+    if(playlistSort==='cat')return a.game.tipos[0].localeCompare(b.game.tipos[0],'es')||a.game.nombre.localeCompare(b.game.nombre,'es');
+    return 0;
+  });
+  return [...sorted,...others];
+}
+
+function setModalSort(mode){
+  modalSort=mode;
+  ['alpha','cat'].forEach(m=>{
+    const btn=document.getElementById('msort-'+m);
+    if(btn)btn.classList.toggle('active',m===mode);
+  });
+  renderList();
+}
+
+// ── RENDER PLAYLIST ───────────────────────────────────────────
+function renderPlaylist(){
+  const el=document.getElementById('playlist');
+  if(playlist.length===0){
+    el.innerHTML=`<div class="empty-state">Agrega juegos para armar tu episodio</div>`;
+    updateStats();renderEChart();return;
+  }
+  const displayList=playlistSort==='none'?playlist:getSortedPlaylist();
+  let html='';
+  let acc=0;
+  displayList.forEach((item,i)=>{
+    acc+=parseInt(item.mins)||0;
+    const isExp=expandedIdx===i;
+
+    if(item.isBreak){
+      html+=`<div class="slot-wrap" data-wrap-idx="${i}">
+        <div class="break-slot" data-idx="${i}">
+          <div class="drag-handle" ontouchstart="touchStart(event,${i})" ontouchmove="touchMove(event)" ontouchend="touchEnd(event)" onmousedown="mouseDown(event,${i})">☰</div>
+          <span>⏸</span><span>Intermedio — <input class="time-input" type="number" min="0" max="99" placeholder="—" value="${item.mins||''}" onclick="event.stopPropagation()" oninput="event.stopPropagation();setMins(${i},this.value)" ontouchstart="event.stopPropagation()" style="width:30px"> min</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-left:4px">${acc>0?'↑'+acc:''}</span>
+          <button class="btn-remove" onclick="event.stopPropagation();removeItem(${i})">Quitar</button>
+        </div>
+      </div>`;return;
+    }
+    if(item.isCustom){
+      html+=`<div class="slot-wrap" data-wrap-idx="${i}">
+        <div class="custom-slot" data-idx="${i}">
+          <div class="drag-handle" ontouchstart="touchStart(event,${i})" ontouchmove="touchMove(event)" ontouchend="touchEnd(event)" onmousedown="mouseDown(event,${i})">☰</div>
+          <input class="custom-input" type="text" placeholder="Nombre del segmento..." value="${item.title||''}"
+            onclick="event.stopPropagation()" onchange="updateCustomTitle(${i},this.value)" oninput="updateCustomTitle(${i},this.value)"
+            onkeydown="if(event.key==='Enter'){this.blur();event.preventDefault();}">
+          <div class="slot-right">
+            <div class="slot-time"><input class="time-input" type="number" min="0" max="99" placeholder="—" value="${item.mins||''}" onclick="event.stopPropagation()" oninput="event.stopPropagation();setMins(${i},this.value)" ontouchstart="event.stopPropagation()"><span class="time-label">min</span></div>
+            <div class="slot-actions">
+              <button class="btn-icon del" onclick="event.stopPropagation();removeItem(${i})">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>`;return;
+    }
+
+    const g=item.game;
+    const isSel=selectedIdx===i;
+    html+=`<div class="slot-wrap" data-wrap-idx="${i}">
+      <div class="slot${isSel&&!isPortraitMobile()?' selected':''}${isExp?' selected expanded':''}" data-idx="${i}" onclick="selectGame(event,${i})">
+        <div class="drag-handle" ontouchstart="touchStart(event,${i})" ontouchmove="touchMove(event)" ontouchend="touchEnd(event)" onmousedown="mouseDown(event,${i})">☰</div>
+        <div style="min-width:0">
+          <div class="slot-name">${g.nombre}</div>
+          <div class="slot-meta">${pills(g.tipos)}<span class="slot-why">${item.porQue||''}</span></div>
+          <div class="e-bar">${epips(g.energia)}</div>
+          <div class="time-accum" id="accum-${i}">${acc>0?'acumulado: '+acc+' min':''}</div>
+        </div>
+        <div class="slot-right">
+          <div class="slot-time">
+            <input class="time-input" type="number" min="0" max="99" placeholder="—" value="${item.mins||''}"
+              onclick="event.stopPropagation()" oninput="event.stopPropagation();setMins(${i},this.value)" ontouchstart="event.stopPropagation()">
+            <span class="time-label">min</span>
+          </div>
+          <div class="slot-actions">
+            <button class="btn-icon sw" onclick="event.stopPropagation();openSwap(${i})" title="Cambiar">⇄</button>
+            <button class="btn-icon" onclick="event.stopPropagation();openPicker('add',${i})" title="Agregar después">＋</button>
+            <button class="btn-icon del" onclick="event.stopPropagation();removeItem(${i})" title="Quitar">✕</button>
+          </div>
+        </div>
+      </div>
+      <div class="slot-detail${isExp?' open':''}" data-filled="${isExp?'1':''}">
+        <div class="slot-detail-inner">${isExp?buildDetailHTML(g):''}</div>
+      </div>
+    </div>`;
+  });
+  el.innerHTML=html;
+  updateStats();renderEChart();
+  renderFilterBar();
+  applyFilters();
+}
+
+function renderEChart(){
+  const el=document.getElementById('echart');
+  const games=playlist.filter(p=>!p.isBreak&&!p.isCustom&&p.game);
+  if(games.length===0){el.innerHTML='';return;}
+  el.innerHTML=games.map((item,i)=>{const e=item.game.energia;const h=Math.round((e/6)*26);return`<div class="ecol"><div class="efill" style="height:${h}px;background:${ec(e)};opacity:.8"></div><div class="elbl">${i+1}</div></div>`;}).join('');
+}
+
+// ── DRAG ─────────────────────────────────────────────────────
+let dragSrcIdx=null,dragGhost=null,dragOffY=0;
+function getAllSlots(){return[...document.querySelectorAll('#playlist [data-idx]')];}
+function getIdxAtY(y){const s=getAllSlots();for(let i=0;i<s.length;i++){const r=s[i].getBoundingClientRect();if(y<r.top+r.height/2)return parseInt(s[i].dataset.idx);}return playlist.length-1;}
+function createGhost(el,cy){const r=el.getBoundingClientRect();dragOffY=cy-r.top;dragGhost=el.cloneNode(true);dragGhost.style.cssText=`position:fixed;left:${r.left}px;width:${r.width}px;opacity:0.7;pointer-events:none;z-index:999;border-radius:11px;background:var(--s3);border:1px solid var(--accent);box-shadow:0 12px 32px rgba(0,0,0,.6)`;dragGhost.style.top=(cy-dragOffY)+'px';document.body.appendChild(dragGhost);el.style.opacity='0.2';}
+function moveGhost(cy){if(!dragGhost)return;dragGhost.style.top=(cy-dragOffY)+'px';}
+function commitDrop(cy){if(dragSrcIdx===null)return;const ti=getIdxAtY(cy);if(ti!==dragSrcIdx){const m=playlist.splice(dragSrcIdx,1)[0];playlist.splice(ti,0,m);}cleanupDrag();renderPlaylist();}
+function cleanupDrag(){if(dragGhost){dragGhost.remove();dragGhost=null;}getAllSlots().forEach(s=>{s.style.opacity='';s.classList.remove('drag-over');});dragSrcIdx=null;}
+function touchStart(e,idx){if(e.target.closest('button')||e.target.tagName==='INPUT')return;e.preventDefault();dragSrcIdx=idx;const t=e.touches[0];createGhost(e.currentTarget.closest('[data-idx]'),t.clientY);}
+function touchMove(e){if(dragSrcIdx===null)return;e.preventDefault();const t=e.touches[0];moveGhost(t.clientY);getAllSlots().forEach(s=>s.classList.remove('drag-over'));const ti=getIdxAtY(t.clientY);const te=document.querySelector(`[data-idx="${ti}"]`);if(te&&ti!==dragSrcIdx)te.classList.add('drag-over');}
+function touchEnd(e){if(dragSrcIdx===null)return;commitDrop(e.changedTouches[0].clientY);}
+let mDown=false;
+function mouseDown(e,idx){if(e.target.closest('button')||e.target.tagName==='INPUT')return;e.preventDefault();dragSrcIdx=idx;mDown=true;createGhost(e.currentTarget.closest('[data-idx]'),e.clientY);document.addEventListener('mousemove',onMM);document.addEventListener('mouseup',onMU);}
+function onMM(e){if(!mDown||dragSrcIdx===null)return;moveGhost(e.clientY);getAllSlots().forEach(s=>s.classList.remove('drag-over'));const ti=getIdxAtY(e.clientY);const te=document.querySelector(`[data-idx="${ti}"]`);if(te&&ti!==dragSrcIdx)te.classList.add('drag-over');}
+function onMU(e){mDown=false;document.removeEventListener('mousemove',onMM);document.removeEventListener('mouseup',onMU);if(dragSrcIdx===null)return;commitDrop(e.clientY);}
+
+function removeItem(idx){
+  if(selectedIdx===idx){selectedIdx=null;document.getElementById('sidebar-empty').style.display='';document.getElementById('sidebar-detail').style.display='none';}
+  if(expandedIdx===idx)expandedIdx=null;
+  else if(expandedIdx>idx)expandedIdx--;
+  playlist.splice(idx,1);renderPlaylist();
+}
+function addBreak(ai){const item={isBreak:true,mins:0};if(ai==null)playlist.push(item);else playlist.splice(ai+1,0,item);renderPlaylist();}
+function addCustom(ai){const item={isCustom:true,title:'',mins:0};if(ai==null)playlist.push(item);else playlist.splice(ai+1,0,item);renderPlaylist();setTimeout(()=>{const ins=document.querySelectorAll('.custom-input');if(ins.length)ins[ins.length-1].focus();},50);}
+function updateCustomTitle(idx,val){if(playlist[idx])playlist[idx].title=val;}
+
+// ── SUGGESTION ENGINE ─────────────────────────────────────────
+function buildSuggestion(contextIdx,mode){
+  const pgames=playlist.filter(p=>!p.isBreak&&!p.isCustom&&p.game);
+  let cg=null;
+  if(mode==='add'&&contextIdx!==null){for(let i=contextIdx;i>=0;i--){if(!playlist[i]?.isBreak){cg=playlist[i].game;break;}}}
+  else if(mode==='add'&&contextIdx===null&&pgames.length>0){cg=pgames[pgames.length-1].game;}
+  else if(mode==='swap'){cg=playlist[swapIdx]?.game||null;}
+  const used=pgames.map(p=>p.game.nombre);
+  const cands=JUEGOS.filter(g=>!used.includes(g.nombre));
+  if(mode==='swap'){
+    const st=cg?cg.tipos[0]:null;
+    const sc=cands.map(g=>{let s=0;if(st&&g.tipos.includes(st))s+=5;if(cg&&Math.abs(g.energia-cg.energia)<=1)s+=2;s+=Math.random()*.5;return{game:g,s};}).sort((a,b)=>b.s-a.s);
+    return{cg,mode:'swap',recT:st?[st]:[],reason:st?`Alternativas de tipo ${st}.`:'Todos los juegos disponibles.',top:sc.slice(0,5).map(x=>x.game)};
+  }
+  if(!cg){return{cg:null,recT:[],reason:'Agrega un juego de apertura.',top:cands.filter(g=>g.energia>=4).slice(0,5)};}
+  const rt=pgames.slice(-3).flatMap(g=>g.game.tipos);
+  const tc={};rt.forEach(t=>{tc[t]=(tc[t]||0)+1;});
+  const ov=Object.entries(tc).filter(([,v])=>v>=2).map(([k])=>k);
+  const lt=cg.tipos;
+  const recT=ALL_TIPOS.filter(t=>!lt.includes(t)&&!ov.includes(t)).slice(0,3);
+  const sc=cands.map(g=>{let s=0;const sl=g.tipos.filter(t=>lt.includes(t)).length;if(sl===0)s+=4;else if(sl===1&&g.tipos.length>1)s+=1;s-=g.tipos.filter(t=>ov.includes(t)).length*3;if(Math.abs(g.energia-cg.energia)<=2)s+=2;s+=Math.random()*1.2;return{game:g,s};}).sort((a,b)=>b.s-a.s);
+  return{cg,recT,reason:ov.length>0?`Después de ${cg.nombre}, hay mucho ${ov[0]}. Conviene alternar.`:`Después de ${cg.nombre} (${lt[0]}), sugerimos cambiar de tipo.`,top:sc.slice(0,5).map(x=>x.game)};
+}
+
+// ── PICKER MODAL ──────────────────────────────────────────────
+function openPicker(mode,afterIdx){
+  modalMode=mode;insertAfterIdx=afterIdx;mFilterTipo='todos';
+  document.getElementById('srch').value='';
+  document.getElementById('modal-title').textContent='Agregar juego';
+  currentSug=buildSuggestion(afterIdx,mode);
+  renderBanner();renderMFilters();renderList();
+  document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('srch').focus(),200);
+}
+function openSwap(idx){
+  modalMode='swap';swapIdx=idx;mFilterTipo='todos';
+  document.getElementById('srch').value='';
+  document.getElementById('modal-title').textContent=`Cambiar "${playlist[idx].game.nombre}"`;
+  currentSug=buildSuggestion(idx,'swap');
+  if(playlist[idx].game.tipos[0])mFilterTipo=playlist[idx].game.tipos[0];
+  renderBanner();renderMFilters();renderList();
+  document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('srch').focus(),200);
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+
+function renderBanner(){
+  const w=document.getElementById('banner-wrap');
+  if(!currentSug){w.innerHTML='';return;}
+  const s=currentSug;
+  const qb=s.recT.length>0?s.recT.map(t=>`<button class="banner-btn" onclick="setMFilter('${t}')">${t}</button>`).join(''):'';
+  const tn=s.top[0]?.nombre;
+  const qa=tn&&modalMode==='add'?`<button class="banner-btn" onclick="addGame('${tn.replace(/'/g,"\\'")}')">＋ ${tn}</button>`:'';
+  w.innerHTML=`<div class="banner"><div class="banner-lbl">${modalMode==='swap'?'⇄ CAMBIO SUGERIDO':'▷ SUGERENCIA'}</div><div class="banner-why">${s.reason}</div>${qb||qa?`<div class="banner-quick">${qb}${qa}</div>`:''}</div>`;
+}
+function setMFilter(t){mFilterTipo=t;renderMFilters();renderList();}
+function renderMFilters(){
+  document.getElementById('mfilters').innerHTML=['todos',...ALL_TIPOS].map(t=>`<button class="mfpill${mFilterTipo===t?' active':''}" onclick="setMFilter('${t}')">${t}</button>`).join('');
+}
+function renderList(){
+  const q=document.getElementById('srch').value.toLowerCase();
+  const un=playlist.filter(p=>!p.isBreak&&!p.isCustom&&p.game).map(p=>p.game.nombre);
+  const sn=modalMode==='swap'&&swapIdx!=null?playlist[swapIdx]?.game?.nombre:null;
+  const sugN=currentSug?currentSug.top.map(g=>g.nombre):[];
+  const swT=modalMode==='swap'&&swapIdx!=null?(playlist[swapIdx]?.game?.tipos||[]):[];
+
+  let games=JUEGOS.filter(g=>{
+    const mt=mFilterTipo==='todos'||g.tipos.includes(mFilterTipo);
+    const mq=!q||g.nombre.toLowerCase().includes(q)||g.desc.toLowerCase().includes(q)||g.tipos.some(t=>t.toLowerCase().includes(q));
+    const inPlaylist=un.includes(g.nombre)&&g.nombre!==sn;
+    if(modalMode==='add'&&inPlaylist)return false;
+    return mt&&mq;
+  });
+
+  games.sort((a,b)=>{
+    if(modalMode==='swap'){
+      const as=sugN.includes(a.nombre),bs=sugN.includes(b.nombre);
+      if(as&&!bs)return-1;if(!as&&bs)return 1;
+    }
+    if(modalSort==='alpha')return a.nombre.localeCompare(b.nombre,'es');
+    if(modalSort==='cat')return a.tipos[0].localeCompare(b.tipos[0],'es')||a.nombre.localeCompare(b.nombre,'es');
+    return 0;
+  });
+
+  const el=document.getElementById('mlist');
+  if(games.length===0){el.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px">No hay juegos que coincidan</div>';return;}
+  el.innerHTML=games.map(g=>{
+    const isSug=sugN.includes(g.nombre);
+    const isSame=modalMode==='swap'&&swT.length>0&&g.tipos.some(t=>swT.includes(t))&&!isSug;
+    let cls='mgame';if(isSug)cls+=' sug';else if(isSame)cls+=' same-type';
+    const tg=isSug?'<span class="tag tag-sug">sugerido</span>':isSame?'<span class="tag tag-same">mismo tipo</span>':'';
+    const ne=g.nombre.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="${cls}" onclick="doAction('${ne}')">`
+      +`<div class="mgame-name">${g.nombre}${tg}</div>`
+      +`<div class="mgame-desc">${g.desc.substring(0,80)}…</div>`
+      +`<div class="mgame-meta">${pills(g.tipos)}<div class="e-bar" style="margin:0">${epips(g.energia,true)}</div></div>`
+      +'</div>';
+  }).join('');
+}
+function doAction(n){if(modalMode==='add')addGame(n);else swapGame(n);}
+function addGame(nombre){
+  const g=JUEGOS.find(j=>j.nombre===nombre);if(!g)return;
+  const item={game:g,porQue:'',mins:0};
+  if(insertAfterIdx==null)playlist.push(item);else playlist.splice(insertAfterIdx+1,0,item);
+  closeModal();renderPlaylist();
+}
+function swapGame(nombre){
+  const g=JUEGOS.find(j=>j.nombre===nombre);if(!g||swapIdx==null)return;
+  playlist[swapIdx]={game:g,porQue:playlist[swapIdx].porQue||'',mins:playlist[swapIdx].mins||0};
+  if(selectedIdx===swapIdx)showSidebar(g);
+  closeModal();renderPlaylist();
+}
+
+// ── PRESETS ───────────────────────────────────────────────────
+function serializePlaylist(){
+  return playlist.map(p=>{
+    if(p.isBreak)return{isBreak:true,mins:p.mins||0};
+    if(p.isCustom)return{isCustom:true,title:p.title||'',mins:p.mins||0};
+    return{nombre:p.game.nombre,porQue:p.porQue||'',mins:p.mins||0};
+  });
+}
+
+function deserializePlaylist(data){
+  return data.map(p=>{
+    if(p.isBreak)return{isBreak:true,mins:p.mins||0};
+    if(p.isCustom)return{isCustom:true,title:p.title||'',mins:p.mins||0};
+    const g=JUEGOS.find(j=>j.nombre===p.nombre);
+    if(!g)return null;
+    return{game:g,porQue:p.porQue||'',mins:p.mins||0};
+  }).filter(Boolean);
+}
+
+function savePreset(n){
+  if(playlist.length===0){alert('El playlist está vacío.');return;}
+  const data=serializePlaylist();
+  localStorage.setItem(`preset_${n}`,JSON.stringify(data));
+  renderPresetSlots();
+}
+
+function loadPreset(n){
+  const raw=localStorage.getItem(`preset_${n}`);
+  if(!raw){alert('Este preset está vacío.');return;}
+  try{
+    playlist=deserializePlaylist(JSON.parse(raw));
+    selectedIdx=null;expandedIdx=null;
+    closePresets();
+    renderPlaylist();
+  }catch(e){alert('Error al cargar el preset.');}
+}
+
+function deletePreset(n){
+  localStorage.removeItem(`preset_${n}`);
+  renderPresetSlots();
+}
+
+function openPresets(){
+  renderPresetSlots();
+  document.getElementById('preset-modal').classList.add('open');
+}
+function closePresets(){document.getElementById('preset-modal').classList.remove('open');}
+document.getElementById('preset-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closePresets();});
+
+function renderPresetSlots(){
+  const el=document.getElementById('preset-slots');
+  let html='';
+  [1,2,3].forEach(n=>{
+    const raw=localStorage.getItem(`preset_${n}`);
+    let info='',hasData=false;
+    if(raw){
+      try{
+        const d=JSON.parse(raw);
+        const games=d.filter(p=>!p.isBreak&&!p.isCustom).length;
+        const mins=d.reduce((s,p)=>s+(p.mins||0),0);
+        info=`${games} juegos${mins>0?' · '+mins+' min':''}`;
+        hasData=true;
+      }catch(e){}
+    }
+    html+=`<div class="preset-slot">
+      <div style="flex:1">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted2);margin-bottom:2px">Preset ${n}</div>
+        ${hasData?`<div class="preset-slot-info">${info}</div>`:`<div class="preset-slot-empty">Vacío</div>`}
+      </div>
+      <div style="display:flex;gap:5px">
+        <button class="btn-preset-action save" onclick="savePreset(${n})">Guardar</button>
+        ${hasData?`<button class="btn-preset-action load" onclick="loadPreset(${n})">Cargar</button>`:''}
+        ${hasData?`<button class="btn-preset-action del" onclick="deletePreset(${n})">✕</button>`:''}
+      </div>
+    </div>`;
+  });
+  el.innerHTML=html;
+}
+
+// ── ORIENTATION CHANGE ────────────────────────────────────────
+window.addEventListener('orientationchange',()=>{
+  setTimeout(()=>{
+    if(!isPortraitMobile()&&expandedIdx!==null){
+      // switched to landscape — show sidebar instead
+      const g=playlist[expandedIdx]?.game;
+      if(g)showSidebar(g);
+      expandedIdx=null;
+      renderPlaylist();
+    }
+  },100);
+});
+
+// ── INIT ─────────────────────────────────────────────────────
+// Shuffle all games randomly on load
+const shuffled=[...JUEGOS].sort(()=>Math.random()-.5);
+shuffled.forEach(g=>{playlist.push({game:g,porQue:'',mins:0});});
+renderFilterBar();
+renderPlaylist();
+</script>
+</body>
+</html>
